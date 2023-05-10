@@ -99,10 +99,7 @@
           ## output
           return(resturn_list)
      }
-          
      
-     ## for debugging
-     ## u_first = test_first_last[[1]]; u_last = test_first_last[[2]]; u_time_window = 1; u_x_diff = 1; u_y_diff = 1
      
      ## nice try - try again
      ## finds candidates for fragment stitching - prints list where at position "ID" is a vector with candidates
@@ -379,16 +376,66 @@
           first_last_list = first.last.finder(pretty_data)
           
           ## export short dataframes
-          write.table(first_last_list[[1]], file=paste(dir_github,"stitching_data_first.txt"), sep="\t")
-          write.table(first_last_list[[2]], file=paste(dir_github,"stitching_data_last.txt"), sep="\t")
+          write.table(first_last_list[[1]], file=paste(dir_github,"stitching_data_first.txt", sep=""), sep="\t")
+          write.table(first_last_list[[2]], file=paste(dir_github,"stitching_data_last.txt", sep=""), sep="\t")
           
      ## stitch tracklets together ~ 40 minutes ####
           
           ## load data and make matrix for faster computation
-          stitching_data_first = read.table(paste(raw_data_location,"stitching_data_first.txt", sep="")) 
-          stitching_data_last = read.table(paste(raw_data_location,"stitching_data_last.txt", sep=""))
+          stitching_data_first = read.table(paste(dir_github,"stitching_data_first.txt", sep="")) 
+          stitching_data_last = read.table(paste(dir_github,"stitching_data_last.txt", sep=""))
           stitching_data_first = as.matrix(stitching_data_first); rownames(stitching_data_first) = NULL
           stitching_data_last = as.matrix(stitching_data_last); rownames(stitching_data_last) = NULL
+          
+          ## create scenario
+          fake_data_first = stitching_data_first
+          fake_data_last = stitching_data_last
+          
+          fake_data_first[1,] = c(1,1,2,2,100,1)
+          fake_data_first[2,] = c(3,3,10,8,100,2)
+          fake_data_first[3,] = c(5,5,19,13,100,3)
+          fake_data_first[4,] = c(7,7,24,20,100,4)
+          fake_data_first[5,] = c(9,9,23,11,100,5)
+          fake_data_first[6,] = c(11,11,16,15,100,5)
+          fake_data_first = fake_data_first[-c(7:nrow(fake_data_first)),]
+          
+          fake_data_last[1,] = c(2,2,9,6,100,1)
+          fake_data_last[2,] = c(4,4,18,11,100,2)
+          fake_data_last[3,] = c(6,6,23,18,100,3)
+          fake_data_last[4,] = c(8,8,24,12,100,4)
+          fake_data_last[5,] = c(10,10,16,15,100,5)
+          fake_data_last[6,] = c(12,12,11,10,100,6)
+          fake_data_last = fake_data_last[-c(7:nrow(fake_data_last)),]
+          
+          plot(fake_data_first[,"X"], fake_data_first[,"Y"], col="dodgerblue", pch=16)
+          points(fake_data_last[,"X"], fake_data_last[,"Y"], col="darkgoldenrod", pch=16)
+          for (n in 1:6) lines(c(fake_data_first[,"X"][n], fake_data_last[,"X"][n]),c(fake_data_first[,"Y"][n], fake_data_last[,"Y"][n]), lty=2)
+          legend("topleft", inset=0.02, legend=c("startpoint", "endpoint"), pch=16,
+                 col = c("dodgerblue", "darkgoldenrod"))
+          
+          
+          for (n in 1:length) {
+               
+               ## runner endpoint
+               runner_end = fake_data_last[n,,drop=FALSE]
+               
+               search_window = data.frame(x_max = integer(),
+                                         x_min = integer(),
+                                         y_max = integer(),
+                                         y_min = integer())
+               
+               ## look for starter points in the vicinity
+               search_window[1,"x_min"] = as.numeric(runner_end[,"X"] - 3)
+               search_window[1, "x_max"] = as.numeric(runner_end[,"X"] + 3)
+               search_window[1, "y_min"] = as.numeric(runner_end[,"Y"] - 3)
+               search_window[1, "y_max"] = as.numeric(runner_end[,"Y"] + 3)
+               
+          }
+          
+          
+          
+          
+          
           
           ## add original tracklet_ID to the data - to allow reconstruction of stitched tracklets
           stitching_data_first = cbind(stitching_data_first,stitching_data_first[,"ID"]); colnames(stitching_data_first)[7] = "original_ID"
