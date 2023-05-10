@@ -9,16 +9,14 @@
 
 ## file patch, libraries & custom functions ####
 
-     ## libraries
-     library(tictoc)        ## to measure duration of computation
-     library(RColorBrewer)  ## for nice colours     
-
-     ## path
-     raw_data_location = "C:/Users/timte/Downloads/"
-  
+     ## paths
+     dir_data = "C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/"
+     dir_github = "C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/Github repository/"
+     
      ## custom functions 
      
-     ## take dataframe and make into concise matrix (for speed)
+     ## make raw dataframe into concise matrix (I am speed)
+     ## produces: matrix with cols: frame_number, time_in_deciseconds, X, Y, Z & ID
      m.concise.dataframe = function(input_ma) {
           
           ## prepare output matrix
@@ -51,6 +49,8 @@
                ## bind dataframe
                concise_matrix = rbind(concise_matrix, runner_merger)
           
+               ## progress update
+               print(paste(round(n/(ncol(input_ma)),5)*100," %",sep=""))
           }
           
           ## name the cols of the matrix for convenience
@@ -65,9 +65,9 @@
           return(concise_matrix)
           
      }
-          ## produces a matrix with the following cols: frame_number, time_in_deciseconds, X, Y, Z & ID
-     
+          
      ## takes pretty data and extracts the first and last of each tracklet in two separate matrices
+     ## produces: first- and last-data matrix from a pretty data matrix
      first.last.finder = function (pretty_data) {
           
           ## store rownumbers
@@ -83,15 +83,15 @@
                ## take last and first marker for each ID
                first_index[n] = head(which(pretty_data[,"ID"] == runner_ID),1)
                last_index[n] = tail(which(pretty_data[,"ID"] == runner_ID),1)
+               
+               ## progress update
+               print(paste(round(n/(length(unique(pretty_data[,"ID"]))),5)*100," %",sep=""))
           }
           
           ## extract first and last datapoints
           stitching_data_first = as.matrix(pretty_data[first_index,, drop=FALSE])
           stitching_data_last = as.matrix(pretty_data[last_index,, drop=FALSE])
           
-          ## sort matrix by frame number
-          ## stitching_data_first = stitching_data_first[order(stitching_data_first[,1],decreasing = FALSE),, drop=FALSE]
-          ## stitching_data_last = stitching_data_last[order(stitching_data_last[,1],decreasing = FALSE),, drop=FALSE]
           
           ## create return list
           resturn_list = list(stitching_data_first, stitching_data_last)
@@ -99,7 +99,7 @@
           ## output
           return(resturn_list)
      }
-          ## produces a first- and last-data matrix from a pretty data matrix
+          
      
      ## for debugging
      ## u_first = test_first_last[[1]]; u_last = test_first_last[[2]]; u_time_window = 1; u_x_diff = 1; u_y_diff = 1
@@ -360,30 +360,27 @@
      ## load raw data and transform to manageable format (output as txt) ~ 10 minutes ####
      
           ## read raw data, and format to easy-to-use-matrix
-          raw_data = read.table(file = paste(raw_data_location, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
-          ## raw_data2 = read.table(file = paste(raw_data_location, "13102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           raw_concise_data = m.concise.dataframe(raw_data)
           
           ## remove original dataframe to free up space
           rm(raw_data)
           
           ## export new dataframe to txt
-          write.table(raw_concise_data, file=paste(raw_data_location,"concise_data.txt"), sep="\t")
-          ## write.table(raw_concise_data, file=paste(raw_data_location,"concise_data_13.10.2022_0001.txt"), sep="\t")
+          write.table(raw_concise_data, file=paste(dir_data,"concise_data.txt", sep=""), sep="\t")
           
      ## extract first and last datapoint for each tracklet ~ 12 minutes ####
           
           ## load data and make matrix
-          pretty_data = read.table(paste(raw_data_location,"concise_data.txt", sep=""))
-          ## pretty_data = read.table(paste(raw_data_location,"concise_data_13.10.2022_0001.txt", sep=""))
+          pretty_data = read.table(paste(dir_data,"concise_data.txt", sep=""))
           pretty_data = as.matrix(pretty_data); rownames(pretty_data) = NULL
           
           ## extract first and last item from each tracklet
           first_last_list = first.last.finder(pretty_data)
           
           ## export short dataframes
-          write.table(first_last_list[[1]], file=paste(raw_data_location,"stitching_data_first.txt"), sep="\t")
-          write.table(first_last_list[[2]], file=paste(raw_data_location,"stitching_data_last.txt"), sep="\t")
+          write.table(first_last_list[[1]], file=paste(dir_github,"stitching_data_first.txt"), sep="\t")
+          write.table(first_last_list[[2]], file=paste(dir_github,"stitching_data_last.txt"), sep="\t")
           
      ## stitch tracklets together ~ 40 minutes ####
           
