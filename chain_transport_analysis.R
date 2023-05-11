@@ -102,22 +102,18 @@
           return(resturn_list)
      }
      
-     ## finds candidates for fragment stitching - prints list where at position "ID" is a vector with candidates
+     ## finds candidates for fragment stitching
+     ## produces: first- and last-data matrix, list with stitched tracks
      fragment.stitcher = function (u_first, u_last, u_time_window, u_x_diff, u_y_diff) {
        
-          # for testing
-          # u_first = fake_data_first; u_last = fake_data_last; u_time_window = 5; u_x_diff = 3; u_y_diff = 3; n=1
-             
           ## list for track_IDs
           track_ID = vector(mode='list', length=length(unique(u_last[,"ID"])))
-          
-          ## for loop (runs through all endpoints IDs)
-          ## for (n in 1:length(unique(u_last[,"ID"]))){
           
           ## variables for the while loop
           proceed = TRUE
           n=1
           
+          ## loop over the endpoints
           while (proceed == TRUE) {
                
                ## take endpoint
@@ -166,17 +162,16 @@
           return(return_list)
      }
           
-     
-     
-     
-     
-     
-     
      ## sequentially apply fragment.stitcher to the data, updating parameters on the way
+     ## produces: first- and last-data matrix, list with stitched tracks
      sequential.fragment.stitcher = function(u_first,u_last, u_time_window_start, u_time_window_steps,u_x_diff_start, u_x_diff_steps,u_y_diff_start, u_y_diff_steps,iterations) {
+          
+          ## track_ID list
+          track_ID_list = vector(mode='list', length=length(unique(u_last[,"ID"])))
           
           ## run the function on the starting values
           runner_data = fragment.stitcher(u_first, u_last, u_time_window_start, u_x_diff_start, u_y_diff_start)
+          
           
           for (n in 1:iterations){
                
@@ -190,11 +185,17 @@
                
                ## rerun function
                runner_data = fragment.stitcher(runner_data[[1]], runner_data[[2]], time_window, x_diff, y_diff)
+               track_ID_list[[n]] = runner_data[[3]]
           }
-          
-          return(runner_data)
+          runner_data[[4]] = track_ID_list
+          return(runner_data, track_ID_list)
      }
-          ## produces a first- and last-data matrix containing stitched tracklets
+     
+     
+     
+     
+     
+     
      
      ## extract pretty data from stitching
      pretty.data.extractor = function (u_first, u_full_data) {
@@ -335,103 +336,7 @@
           stitching_data_first = as.matrix(stitching_data_first); rownames(stitching_data_first) = NULL
           stitching_data_last = as.matrix(stitching_data_last); rownames(stitching_data_last) = NULL
           
-          
-          ## version that works for the example
-          fragment.stitcher = function (u_first, u_last, u_time_window, u_x_diff, u_y_diff) {
-               
-               # for testing
-               # u_first = fake_data_first; u_last = fake_data_last; u_time_window = 5; u_x_diff = 3; u_y_diff = 3; n=1
-               
-               ## list for track_IDs
-               track_ID = vector(mode='list', length=length(unique(u_last[,"ID"])))
-               
-               ## for loop (runs through all endpoints IDs)
-               ## for (n in 1:length(unique(u_last[,"ID"]))){
-               
-               ## variables for the while loop
-               proceed = TRUE
-               n=1
-               
-               while (proceed == TRUE) {
-                    
-                    ## take endpoint
-                    runner_endpoint = u_last[which(u_last[,"ID"] == n),,drop=FALSE]
-                    
-                    ## select all startpoints, that the come after runner_endpoint and are within u_time_window
-                    runner_candidates_time = u_first[which(u_first[,"frame_number"] > as.numeric(runner_endpoint[,"frame_number"]) & 
-                                                                u_first[,"frame_number"] <= (as.numeric(runner_endpoint[,"frame_number"])+u_time_window)),, drop=FALSE]
-                    
-                    ## select all rows differ less than u_x_diff units on X
-                    runner_candidate_time_x = runner_candidates_time[which((abs(runner_candidates_time[,"X"] - as.numeric(runner_endpoint[,"X"]))) <= u_x_diff),, drop=FALSE]
-                    
-                    ## select all rows differ less than u_y_diff units on Y
-                    runner_candidate_time_x_y = runner_candidate_time_x[which((abs(runner_candidate_time_x[,"Y"] - as.numeric(runner_endpoint[,"Y"]))) <= u_y_diff),, drop=FALSE]
-                    
-                    ## if one tracklet left: stitch
-                    if (nrow(runner_candidate_time_x_y) == 1) {
-                         
-                         ## update track_ID
-                         track_ID[[runner_endpoint[,"ID"]]] = paste(track_ID[[n]],runner_endpoint[,"ID"],runner_candidate_time_x_y[,"ID"],sep=",")
-                         
-                         ## remove endpoint of runner_endpoint
-                         u_last = u_last[-which(u_last[,"ID"] == runner_endpoint[,"ID"]),, drop=FALSE]
-                         
-                         ## update new endpoint ID
-                         u_last[which(u_last[,"ID"] == runner_candidate_time_x_y[,"ID"]),"ID"] = runner_endpoint[,"ID"]
-                         
-                         ## remove now sitched startpoint runner_candidate_time_x_y
-                         u_first = u_first[-which(u_first[,"ID"] == runner_candidate_time_x_y[,"ID"]),, drop=FALSE]
-                         
-                    } else {
-                         
-                         ## go to next tracklet
-                         n = n + 1
-                         
-                         ## stop if there is no more next tracklet
-                         proceed = ifelse(n > length(u_last[,"ID"]), FALSE, TRUE)
-                    }
-                    
-               }
-               
-               ## make return list
-               return_list = list(u_first, u_last, track_ID)     
-               
-               ## function output
-               return(return_list)
-          }
-          
-          ## create scenario
-          fake_data_first = stitching_data_first
-          fake_data_last = stitching_data_last
-          
-          fake_data_first[1,] = c(1,1,2,2,100,1)
-          fake_data_first[2,] = c(3,3,10,8,100,2)
-          fake_data_first[3,] = c(5,5,19,13,100,3)
-          fake_data_first[4,] = c(7,7,24,20,100,4)
-          fake_data_first[5,] = c(9,9,23,11,100,5)
-          fake_data_first[6,] = c(11,11,16,15,100,6)
-          fake_data_first = fake_data_first[-c(7:nrow(fake_data_first)),]
-          
-          fake_data_last[1,] = c(2,2,9,6,100,1)
-          fake_data_last[2,] = c(4,4,18,11,100,2)
-          fake_data_last[3,] = c(6,6,23,18,100,3)
-          fake_data_last[4,] = c(8,8,24,12,100,4)
-          fake_data_last[5,] = c(10,10,16,15,100,5)
-          fake_data_last[6,] = c(12,12,11,10,100,6)
-          fake_data_last = fake_data_last[-c(7:nrow(fake_data_last)),]
-          
-          plot(fake_data_first[,"X"], fake_data_first[,"Y"], col="dodgerblue", pch=16)
-          points(fake_data_last[,"X"], fake_data_last[,"Y"], col="darkgoldenrod", pch=16)
-          for (n in 1:6) lines(c(fake_data_first[,"X"][n], fake_data_last[,"X"][n]),c(fake_data_first[,"Y"][n], fake_data_last[,"Y"][n]), lty=2)
-          legend("topleft", inset=0.02, legend=c("startpoint", "endpoint"), pch=16,
-                 col = c("dodgerblue", "darkgoldenrod"))
-          
-          kek = fragment.stitcher(u_first = subset_first, u_last = subset_last,
-                                  u_time_window = 1, u_x_diff = 1, u_y_diff = 1)
-          
-          
-          
-          
+          tictoc::tic()
           
           ## sequential stitching
           seq_results = sequential.fragment.stitcher(u_first = stitching_data_first,
@@ -442,7 +347,25 @@
                                                      u_x_diff_steps = 0.2,
                                                      u_y_diff_start = 1,
                                                      u_y_diff_steps = 0.2,
-                                                     iterations = 100)
+                                                     iterations = 1000)
+          
+          tictoc::toc()
+          
+          unlist(seq_results[[3]])
+          
+          start_1 = stitching_data_first[which(stitching_data_first[,"ID"] == 85),, drop=FALSE]
+          end_1 = stitching_data_last[which(stitching_data_last[,"ID"] == 85),, drop=FALSE]
+          
+          start_2 = stitching_data_first[which(stitching_data_first[,"ID"] == 713),, drop=FALSE]
+          end_2 = stitching_data_last[which(stitching_data_last[,"ID"] == 713),, drop=FALSE]
+          
+          plot(start_1[,"X"], start_1[,"Y"], pch=16, col="red")
+          points(end_1[,"X"], end_1[,"Y"], pch=16, col="blue")
+          
+          points(start_2[,"X"], start_2[,"Y"], pch=16, col="orange")
+          points(end_2[,"X"], end_2[,"Y"], pch=16, col="purple")
+          
+          
           
           ## reconstruct full track data
           track_data = pretty.data.extractor(u_first = seq_results[[1]], u_full_data = pretty_data)
@@ -649,6 +572,104 @@
      
      
 ## 4. ARCHIVE ####
+     ## stitching example that works ####
+     
+     ## version that works for the example
+     fragment.stitcher = function (u_first, u_last, u_time_window, u_x_diff, u_y_diff) {
+          
+          # for testing
+          # u_first = fake_data_first; u_last = fake_data_last; u_time_window = 5; u_x_diff = 3; u_y_diff = 3; n=1
+          
+          ## list for track_IDs
+          track_ID = vector(mode='list', length=length(unique(u_last[,"ID"])))
+          
+          ## for loop (runs through all endpoints IDs)
+          ## for (n in 1:length(unique(u_last[,"ID"]))){
+          
+          ## variables for the while loop
+          proceed = TRUE
+          n=1
+          
+          while (proceed == TRUE) {
+               
+               ## take endpoint
+               runner_endpoint = u_last[which(u_last[,"ID"] == n),,drop=FALSE]
+               
+               ## select all startpoints, that the come after runner_endpoint and are within u_time_window
+               runner_candidates_time = u_first[which(u_first[,"frame_number"] > as.numeric(runner_endpoint[,"frame_number"]) & 
+                                                           u_first[,"frame_number"] <= (as.numeric(runner_endpoint[,"frame_number"])+u_time_window)),, drop=FALSE]
+               
+               ## select all rows differ less than u_x_diff units on X
+               runner_candidate_time_x = runner_candidates_time[which((abs(runner_candidates_time[,"X"] - as.numeric(runner_endpoint[,"X"]))) <= u_x_diff),, drop=FALSE]
+               
+               ## select all rows differ less than u_y_diff units on Y
+               runner_candidate_time_x_y = runner_candidate_time_x[which((abs(runner_candidate_time_x[,"Y"] - as.numeric(runner_endpoint[,"Y"]))) <= u_y_diff),, drop=FALSE]
+               
+               ## if one tracklet left: stitch
+               if (nrow(runner_candidate_time_x_y) == 1) {
+                    
+                    ## update track_ID
+                    track_ID[[runner_endpoint[,"ID"]]] = paste(track_ID[[n]],runner_endpoint[,"ID"],runner_candidate_time_x_y[,"ID"],sep=",")
+                    
+                    ## remove endpoint of runner_endpoint
+                    u_last = u_last[-which(u_last[,"ID"] == runner_endpoint[,"ID"]),, drop=FALSE]
+                    
+                    ## update new endpoint ID
+                    u_last[which(u_last[,"ID"] == runner_candidate_time_x_y[,"ID"]),"ID"] = runner_endpoint[,"ID"]
+                    
+                    ## remove now sitched startpoint runner_candidate_time_x_y
+                    u_first = u_first[-which(u_first[,"ID"] == runner_candidate_time_x_y[,"ID"]),, drop=FALSE]
+                    
+               } else {
+                    
+                    ## go to next tracklet
+                    n = n + 1
+                    
+                    ## stop if there is no more next tracklet
+                    proceed = ifelse(n > length(u_last[,"ID"]), FALSE, TRUE)
+               }
+               
+          }
+          
+          ## make return list
+          return_list = list(u_first, u_last, track_ID)     
+          
+          ## function output
+          return(return_list)
+     }
+     
+     ## create scenario
+     fake_data_first = stitching_data_first
+     fake_data_last = stitching_data_last
+     
+     fake_data_first[1,] = c(1,1,2,2,100,1)
+     fake_data_first[2,] = c(3,3,10,8,100,2)
+     fake_data_first[3,] = c(5,5,19,13,100,3)
+     fake_data_first[4,] = c(7,7,24,20,100,4)
+     fake_data_first[5,] = c(9,9,23,11,100,5)
+     fake_data_first[6,] = c(11,11,16,15,100,6)
+     fake_data_first = fake_data_first[-c(7:nrow(fake_data_first)),]
+     
+     fake_data_last[1,] = c(2,2,9,6,100,1)
+     fake_data_last[2,] = c(4,4,18,11,100,2)
+     fake_data_last[3,] = c(6,6,23,18,100,3)
+     fake_data_last[4,] = c(8,8,24,12,100,4)
+     fake_data_last[5,] = c(10,10,16,15,100,5)
+     fake_data_last[6,] = c(12,12,11,10,100,6)
+     fake_data_last = fake_data_last[-c(7:nrow(fake_data_last)),]
+     
+     plot(fake_data_first[,"X"], fake_data_first[,"Y"], col="dodgerblue", pch=16)
+     points(fake_data_last[,"X"], fake_data_last[,"Y"], col="darkgoldenrod", pch=16)
+     for (n in 1:6) lines(c(fake_data_first[,"X"][n], fake_data_last[,"X"][n]),c(fake_data_first[,"Y"][n], fake_data_last[,"Y"][n]), lty=2)
+     legend("topleft", inset=0.02, legend=c("startpoint", "endpoint"), pch=16,
+            col = c("dodgerblue", "darkgoldenrod"))
+     
+     kek = fragment.stitcher(u_first = subset_first, u_last = subset_last,
+                             u_time_window = 1, u_x_diff = 1, u_y_diff = 1)
+     
+     
+     
+     
      ## changes the format of the raw data into something more concise (all in dataframes) ####
      concise.dataframe = function(input_df) {
           
