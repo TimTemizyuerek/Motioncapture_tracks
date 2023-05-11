@@ -9,6 +9,8 @@
 
 ## file patch, libraries & custom functions ####
 
+     library(stringr)              ## str_pad to make tracklet ID length uniform
+
      ## paths
      dir_data = "C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/"
      dir_github = "C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/Github repository/"
@@ -100,129 +102,75 @@
           return(resturn_list)
      }
      
-     
-     ## nice try - try again
      ## finds candidates for fragment stitching - prints list where at position "ID" is a vector with candidates
      fragment.stitcher = function (u_first, u_last, u_time_window, u_x_diff, u_y_diff) {
+       
+          # for testing
+          # u_first = fake_data_first; u_last = fake_data_last; u_time_window = 5; u_x_diff = 3; u_y_diff = 3; n=1
+             
+          ## list for track_IDs
+          track_ID = vector(mode='list', length=length(unique(u_last[,"ID"])))
           
-          ## STEP 1. FIND MATCHES
+          ## for loop (runs through all endpoints IDs)
+          ## for (n in 1:length(unique(u_last[,"ID"]))){
           
-          ## output vector
-          matches_list = vector(mode='list', length=nrow(u_first))
+          ## variables for the while loop
+          proceed = TRUE
+          n=1
           
-          ## for loop
-          for (n in 1:length(unique(u_last[,"ID"]))){
+          while (proceed == TRUE) {
                
-               ## take tracklet one by one
-               runner_ID = unique(u_last[,"ID"])[n]
-               
-               ## all sub-tracklets that are contained in ID
-               runner_ID_subset = u_last[which(u_last[,"ID"] == runner_ID),, drop=FALSE]
-               
-               ## find last sub-tracklet (where the new tracklet would need to be attached)
-               runner_row_last = runner_ID_subset[which(runner_ID_subset[,"frame_number"] == max(runner_ID_subset[,"frame_number"])),, drop=FALSE]
-               
-               ## select all rows in u_first that are later than runner_row_last
-               runner_data = u_first[which(u_first[,"frame_number"] > as.numeric(runner_row_last[,"frame_number"])),,drop=FALSE]
-               
-               ## if there is at least one candidate in runner_data ... 
-               if (nrow(runner_data) > 0) {
-                   
-                    ## ... test if the tracklets are the first of each track
-                    ## IDs to keep
-                    runner_IDs_in_runner_ID_that_are_the_first_of_their_track = rep(NA, length(unique(runner_data[,"ID"])))
-                    for (m in 1:length(unique(runner_data[,"ID"]))) {
-                         
-                         ## loop through all IDs
-                         loop_ID = runner_data[,"ID"][m]
-                         
-                         ## find earliest tracklet
-                         loop_min_runner_data = min(runner_data[which(runner_data[,"ID"] == loop_ID),,drop=FALSE][,"time_in_deciseconds"])
-                         
-                         ## find if there are earlier tracklets 
-                         loop_min_u_first = min(u_first[which(u_first[,"ID"] == loop_ID),,drop=FALSE][,"time_in_deciseconds"])
-                         
-                         ## collect IDs to discard
-                         if (loop_min_u_first >= loop_min_runner_data) {
-                              runner_IDs_in_runner_ID_that_are_the_first_of_their_track[m] = loop_ID
-                         }
-                    }
-                    
-                    
-               } else {
-                    
-                    runner_IDs_in_runner_ID_that_are_the_first_of_their_track = 0
-               }
-               
-               ## reduce runner_data to first of each track
-               runner_data = runner_data[runner_data[,"ID"] %in% unique(runner_IDs_in_runner_ID_that_are_the_first_of_their_track),,drop=FALSE]
-               
-               ## safe colnames for below
-               col_names_for_later = colnames(runner_data)
-               
-               ## select all rows in runner_data that come u_time_window frames after runner_row_last
-               runner_candidate_rows = runner_data[which((runner_data[,"frame_number"] - as.numeric(runner_row_last[,"frame_number"])) <= u_time_window),, drop=FALSE]
-               
-               ## if there are at least 2 candidates
-               if (nrow(runner_candidate_rows) >= 2){
-                    
-                    ## new matrix skeleton
-                    runner_candidate_rows_reduced = matrix(nrow=length(unique(runner_candidate_rows[,"ID"])), ncol=length(col_names_for_later))
-                    colnames(runner_candidate_rows_reduced) = col_names_for_later
-                    
-                    ## reduce candidates to first of stitched track
-                    for (m in 1:length(unique(runner_candidate_rows[,"ID"]))) {
-                         
-                         ## run through IDs
-                         loop_ID = unique(runner_candidate_rows[,"ID"])[m]
-                         
-                         ## get all rows with ID m
-                         loop_runner_candidate = runner_candidate_rows[which(runner_candidate_rows[,"ID"] == loop_ID),, drop=FALSE]
-                         
-                         ## find smallest frame_number value - add that row to new matrix (to be used later for tracklet selection)
-                         runner_candidate_rows_reduced[m,] = loop_runner_candidate[which(loop_runner_candidate[,"frame_number"] == min(loop_runner_candidate[,"frame_number"])),]
-                         }     
-                    
-               } else {
-                    
-                    ## to not break the following code
-                    runner_candidate_rows_reduced = runner_candidate_rows
-               }
+               ## take endpoint
+               runner_endpoint = u_last[which(u_last[,"ID"] == n),,drop=FALSE]
+
+               ## select all startpoints, that the come after runner_endpoint and are within u_time_window
+               runner_candidates_time = u_first[which(u_first[,"frame_number"] > as.numeric(runner_endpoint[,"frame_number"]) & 
+                                                      u_first[,"frame_number"] <= (as.numeric(runner_endpoint[,"frame_number"])+u_time_window)),, drop=FALSE]
                
                ## select all rows differ less than u_x_diff units on X
-               runner_candidate_rows_reduced = runner_candidate_rows_reduced[which((abs(runner_candidate_rows_reduced[,"X"] - as.numeric(runner_row_last[,"X"]))) <= u_x_diff),, drop=FALSE]
+               runner_candidate_time_x = runner_candidates_time[which((abs(runner_candidates_time[,"X"] - as.numeric(runner_endpoint[,"X"]))) <= u_x_diff),, drop=FALSE]
                
                ## select all rows differ less than u_y_diff units on Y
-               runner_candidate_rows_reduced = runner_candidate_rows_reduced[which((abs(runner_candidate_rows_reduced[,"Y"] - as.numeric(runner_row_last[,"Y"]))) <= u_y_diff),, drop=FALSE]
+               runner_candidate_time_x_y = runner_candidate_time_x[which((abs(runner_candidate_time_x[,"Y"] - as.numeric(runner_endpoint[,"Y"]))) <= u_y_diff),, drop=FALSE]
                
-               ## export candidate IDs
-               matches_list[[as.numeric(runner_row_last[,"ID"])]] = as.numeric(runner_candidate_rows_reduced[,"ID"])
-          }
+               ## if one tracklet left: stitch
+               if (nrow(runner_candidate_time_x_y) == 1) {
+                    
+                    ## update track_ID
+                    track_ID[[runner_endpoint[,"ID"]]] = paste(track_ID[[n]],runner_endpoint[,"ID"],runner_candidate_time_x_y[,"ID"],sep=",")
+                    
+                    ## remove endpoint of runner_endpoint
+                    u_last = u_last[-which(u_last[,"ID"] == runner_endpoint[,"ID"]),, drop=FALSE]
+                    
+                    ## update new endpoint ID
+                    u_last[which(u_last[,"ID"] == runner_candidate_time_x_y[,"ID"]),"ID"] = runner_endpoint[,"ID"]
+                    
+                    ## remove now sitched startpoint runner_candidate_time_x_y
+                    u_first = u_first[-which(u_first[,"ID"] == runner_candidate_time_x_y[,"ID"]),, drop=FALSE]
+                    
+               } else {
+                    
+                    ## go to next tracklet
+                    n = n + 1
+                    
+                    ## stop if there is no more next tracklet
+                    proceed = ifelse(n > length(u_last[,"ID"]), FALSE, TRUE)
+               }
           
-          ## STEP 2. UPDATE DATA MATRICES WITH STITCHES
-          
-          ## find tracklets that have only one potential following tracklet
-          tracklet_ID_with_one_match = which(lapply(matches_list, function (x) length(x))==1)
-          
-          ## run through matches and update data
-          for (n in tracklet_ID_with_one_match) {
-               
-               ## update label of match in first to n
-               u_first[which(u_first[,"ID"]==matches_list[[n]]), "ID"] = n
-               
-               ## update label of match in last to n
-               u_last[which(u_last[,"ID"]==matches_list[[n]]), "ID"] = n
-               
           }
           
           ## make return list
-          return_list = list(u_first, u_last)
+          return_list = list(u_first, u_last, track_ID)     
           
           ## function output
           return(return_list)
-          
      }
-          ## produces a first- and last-data matrix containing stitched tracklets
+          
+     
+     
+     
+     
+     
      
      ## sequentially apply fragment.stitcher to the data, updating parameters on the way
      sequential.fragment.stitcher = function(u_first,u_last, u_time_window_start, u_time_window_steps,u_x_diff_start, u_x_diff_steps,u_y_diff_start, u_y_diff_steps,iterations) {
@@ -387,6 +335,71 @@
           stitching_data_first = as.matrix(stitching_data_first); rownames(stitching_data_first) = NULL
           stitching_data_last = as.matrix(stitching_data_last); rownames(stitching_data_last) = NULL
           
+          
+          ## version that works for the example
+          fragment.stitcher = function (u_first, u_last, u_time_window, u_x_diff, u_y_diff) {
+               
+               # for testing
+               # u_first = fake_data_first; u_last = fake_data_last; u_time_window = 5; u_x_diff = 3; u_y_diff = 3; n=1
+               
+               ## list for track_IDs
+               track_ID = vector(mode='list', length=length(unique(u_last[,"ID"])))
+               
+               ## for loop (runs through all endpoints IDs)
+               ## for (n in 1:length(unique(u_last[,"ID"]))){
+               
+               ## variables for the while loop
+               proceed = TRUE
+               n=1
+               
+               while (proceed == TRUE) {
+                    
+                    ## take endpoint
+                    runner_endpoint = u_last[which(u_last[,"ID"] == n),,drop=FALSE]
+                    
+                    ## select all startpoints, that the come after runner_endpoint and are within u_time_window
+                    runner_candidates_time = u_first[which(u_first[,"frame_number"] > as.numeric(runner_endpoint[,"frame_number"]) & 
+                                                                u_first[,"frame_number"] <= (as.numeric(runner_endpoint[,"frame_number"])+u_time_window)),, drop=FALSE]
+                    
+                    ## select all rows differ less than u_x_diff units on X
+                    runner_candidate_time_x = runner_candidates_time[which((abs(runner_candidates_time[,"X"] - as.numeric(runner_endpoint[,"X"]))) <= u_x_diff),, drop=FALSE]
+                    
+                    ## select all rows differ less than u_y_diff units on Y
+                    runner_candidate_time_x_y = runner_candidate_time_x[which((abs(runner_candidate_time_x[,"Y"] - as.numeric(runner_endpoint[,"Y"]))) <= u_y_diff),, drop=FALSE]
+                    
+                    ## if one tracklet left: stitch
+                    if (nrow(runner_candidate_time_x_y) == 1) {
+                         
+                         ## update track_ID
+                         track_ID[[runner_endpoint[,"ID"]]] = paste(track_ID[[n]],runner_endpoint[,"ID"],runner_candidate_time_x_y[,"ID"],sep=",")
+                         
+                         ## remove endpoint of runner_endpoint
+                         u_last = u_last[-which(u_last[,"ID"] == runner_endpoint[,"ID"]),, drop=FALSE]
+                         
+                         ## update new endpoint ID
+                         u_last[which(u_last[,"ID"] == runner_candidate_time_x_y[,"ID"]),"ID"] = runner_endpoint[,"ID"]
+                         
+                         ## remove now sitched startpoint runner_candidate_time_x_y
+                         u_first = u_first[-which(u_first[,"ID"] == runner_candidate_time_x_y[,"ID"]),, drop=FALSE]
+                         
+                    } else {
+                         
+                         ## go to next tracklet
+                         n = n + 1
+                         
+                         ## stop if there is no more next tracklet
+                         proceed = ifelse(n > length(u_last[,"ID"]), FALSE, TRUE)
+                    }
+                    
+               }
+               
+               ## make return list
+               return_list = list(u_first, u_last, track_ID)     
+               
+               ## function output
+               return(return_list)
+          }
+          
           ## create scenario
           fake_data_first = stitching_data_first
           fake_data_last = stitching_data_last
@@ -396,7 +409,7 @@
           fake_data_first[3,] = c(5,5,19,13,100,3)
           fake_data_first[4,] = c(7,7,24,20,100,4)
           fake_data_first[5,] = c(9,9,23,11,100,5)
-          fake_data_first[6,] = c(11,11,16,15,100,5)
+          fake_data_first[6,] = c(11,11,16,15,100,6)
           fake_data_first = fake_data_first[-c(7:nrow(fake_data_first)),]
           
           fake_data_last[1,] = c(2,2,9,6,100,1)
@@ -413,33 +426,12 @@
           legend("topleft", inset=0.02, legend=c("startpoint", "endpoint"), pch=16,
                  col = c("dodgerblue", "darkgoldenrod"))
           
-          
-          for (n in 1:length) {
-               
-               ## runner endpoint
-               runner_end = fake_data_last[n,,drop=FALSE]
-               
-               search_window = data.frame(x_max = integer(),
-                                         x_min = integer(),
-                                         y_max = integer(),
-                                         y_min = integer())
-               
-               ## look for starter points in the vicinity
-               search_window[1,"x_min"] = as.numeric(runner_end[,"X"] - 3)
-               search_window[1, "x_max"] = as.numeric(runner_end[,"X"] + 3)
-               search_window[1, "y_min"] = as.numeric(runner_end[,"Y"] - 3)
-               search_window[1, "y_max"] = as.numeric(runner_end[,"Y"] + 3)
-               
-          }
+          kek = fragment.stitcher(u_first = subset_first, u_last = subset_last,
+                                  u_time_window = 1, u_x_diff = 1, u_y_diff = 1)
           
           
           
           
-          
-          
-          ## add original tracklet_ID to the data - to allow reconstruction of stitched tracklets
-          stitching_data_first = cbind(stitching_data_first,stitching_data_first[,"ID"]); colnames(stitching_data_first)[7] = "original_ID"
-          stitching_data_last = cbind(stitching_data_last,stitching_data_last[,"ID"]); colnames(stitching_data_last)[7] = "original_ID"
           
           ## sequential stitching
           seq_results = sequential.fragment.stitcher(u_first = stitching_data_first,
@@ -450,7 +442,7 @@
                                                      u_x_diff_steps = 0.2,
                                                      u_y_diff_start = 1,
                                                      u_y_diff_steps = 0.2,
-                                                     iterations = 1000)
+                                                     iterations = 100)
           
           ## reconstruct full track data
           track_data = pretty.data.extractor(u_first = seq_results[[1]], u_full_data = pretty_data)
