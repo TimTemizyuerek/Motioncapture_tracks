@@ -104,6 +104,10 @@
      ## produces: first- and last-data matrix, list with stitched tracks
      fragment.stitcher = function (u_first, u_last, u_track_ID, u_time_window, u_x_diff, u_y_diff) {
        
+          ## for testing
+          # u_first = fake_data_first; u_last = fake_data_last; u_track_ID = track_ID
+          # u_time_window = 1; u_x_diff = 1; u_y_diff = 1
+          
           ## variables for the while loop
           proceed = TRUE
           n=1
@@ -128,18 +132,21 @@
                if (nrow(runner_candidate_time_x_y) == 1) {
                     
                     ## update u_track_ID
-                    u_track_ID[[runner_endpoint[,"ID"]]] = paste(u_track_ID[[n]],runner_endpoint[,"ID"],runner_candidate_time_x_y[,"ID"],sep=",")
+                    u_track_ID[[runner_endpoint[,"ID"]]] = as.numeric(c(u_track_ID[[runner_endpoint[,"ID"]]], runner_endpoint[,"ID"], runner_candidate_time_x_y[,"ID"]))
                     
                     ## remove endpoint of runner_endpoint
                     u_last = u_last[-which(u_last[,"ID"] == runner_endpoint[,"ID"]),, drop=FALSE]
                     
                     ## update new endpoint ID
-                    u_last[which(u_last[,"ID"] == runner_candidate_time_x_y[,"ID"]),"ID"] = runner_endpoint[,"ID"]
+                    u_last[which(u_last[,"ID"] == runner_candidate_time_x_y[,"ID"]),"ID"] = as.numeric(runner_endpoint[,"ID"])
                     
-                    ## remove now sitched startpoint runner_candidate_time_x_y
+                    ## remove now stitched startpoint runner_candidate_time_x_y
                     u_first = u_first[-which(u_first[,"ID"] == runner_candidate_time_x_y[,"ID"]),, drop=FALSE]
                     
                } else {
+                    
+                    ## update u_track_ID
+                    u_track_ID[[runner_endpoint[,"ID"]]] = as.numeric(c(u_track_ID[[runner_endpoint[,"ID"]]], runner_endpoint[,"ID"]))
                     
                     ## go to next tracklet
                     n = n + 1
@@ -164,20 +171,26 @@
           ## run the function on the starting values
           runner_data = fragment.stitcher(u_first, u_last, u_track_ID, u_time_window_start, u_x_diff_start, u_y_diff_start)
           
-          for (n in 1:iterations){
+          if (iterations >= 1) {
+               for (n in 1:iterations){
+                    
+                    ## print progress
+                    print(paste(round((n/iterations)*100,3)," %", sep=""))
+                    
+                    ## update parameters
+                    time_window = u_time_window_start + (n*u_time_window_steps) 
+                    x_diff = u_x_diff_start + (n*u_x_diff_steps) 
+                    y_diff = u_y_diff_start + (n*u_y_diff_steps) 
+                    
+                    ## rerun function
+                    runner_data = fragment.stitcher(runner_data[[1]], runner_data[[2]], runner_data[[3]], time_window, x_diff, y_diff)
+               }
+          } else if (iterations < 1) {
                
-               ## print progress
-               print(paste(round((n/iterations)*100,3)," %", sep=""))
+               stop("ERROR: iterations must be 1 or higher")
                
-               ## update parameters
-               time_window = u_time_window_start + (n*u_time_window_steps) 
-               x_diff = u_x_diff_start + (n*u_x_diff_steps) 
-               y_diff = u_y_diff_start + (n*u_y_diff_steps) 
-               
-               ## rerun function
-               runner_data = fragment.stitcher(runner_data[[1]], runner_data[[2]], runner_data[[3]], time_window, x_diff, y_diff)
-
-          }
+          } 
+          
           return(runner_data)
      }
      
@@ -326,8 +339,6 @@
           stitching_data_first = as.matrix(stitching_data_first); rownames(stitching_data_first) = NULL
           stitching_data_last = as.matrix(stitching_data_last); rownames(stitching_data_last) = NULL
           
-          tictoc::tic()
-          
           ## list for track_IDs
           track_ID = vector(mode='list', length=length(unique(stitching_data_last[,"ID"])))
           
@@ -336,28 +347,70 @@
                                                      u_last = stitching_data_last,
                                                      u_track_ID = track_ID,
                                                      u_time_window_start = 1,
-                                                     u_time_window_steps = 0.1,
+                                                     u_time_window_steps = 0.2,
                                                      u_x_diff_start = 1,
-                                                     u_x_diff_steps = 0.2,
+                                                     u_x_diff_steps = 0.5,
                                                      u_y_diff_start = 1,
-                                                     u_y_diff_steps = 0.2,
-                                                     iterations = 1000)
+                                                     u_y_diff_steps = 0.5,
+                                                     iterations = 100)
           
-          tictoc::toc()
+          head(seq_results[[3]],40)
           
-          unlist(seq_results[[3]])
           
-          start_1 = stitching_data_first[which(stitching_data_first[,"ID"] == 85),, drop=FALSE]
-          end_1 = stitching_data_last[which(stitching_data_last[,"ID"] == 85),, drop=FALSE]
+          ## generate new test data
+          fake_data_first = stitching_data_first
+          fake_data_last = stitching_data_last
           
-          start_2 = stitching_data_first[which(stitching_data_first[,"ID"] == 713),, drop=FALSE]
-          end_2 = stitching_data_last[which(stitching_data_last[,"ID"] == 713),, drop=FALSE]
+          fake_data_first[1,] = c(1,1,2,2,100,1)
+          fake_data_first[2,] = c(3,3,10,8,100,2)
+          fake_data_first[3,] = c(5,5,19,13,100,3)
+          fake_data_first[4,] = c(7,7,24,20,100,4)
+          fake_data_first[5,] = c(9,9,23,11,100,5)
+          fake_data_first[6,] = c(11,11,16,15,100,6)
+          fake_data_first = fake_data_first[-c(7:nrow(fake_data_first)),]
           
-          plot(start_1[,"X"], start_1[,"Y"], pch=16, col="red")
-          points(end_1[,"X"], end_1[,"Y"], pch=16, col="blue")
+          fake_data_last[1,] = c(2,2,9,6,100,1)
+          fake_data_last[2,] = c(4,4,18,11,100,2)
+          fake_data_last[3,] = c(6,6,23,18,100,3)
+          fake_data_last[4,] = c(8,8,24,12,100,4)
+          fake_data_last[5,] = c(10,10,16,15,100,5)
+          fake_data_last[6,] = c(12,12,11,10,100,6)
+          fake_data_last = fake_data_last[-c(7:nrow(fake_data_last)),]
           
-          points(start_2[,"X"], start_2[,"Y"], pch=16, col="orange")
-          points(end_2[,"X"], end_2[,"Y"], pch=16, col="purple")
+          plot(fake_data_first[,"X"], fake_data_first[,"Y"], col="dodgerblue", pch=16,xlim=c(0,25), ylim=c(0,20))
+          points(fake_data_last[,"X"], fake_data_last[,"Y"], col="darkgoldenrod", pch=16)
+          for (n in 1:6) lines(c(fake_data_first[,"X"][n], fake_data_last[,"X"][n]),c(fake_data_first[,"Y"][n], fake_data_last[,"Y"][n]), lty=2)
+          legend("topleft", legend=c("startpoint", "endpoint"), pch=16,
+                 col = c("dodgerblue", "darkgoldenrod"))
+          for (n in 1:25) abline(v=n, col=scales::alpha("black", 0.1)); for (n in 1:20) abline(h=n, col=scales::alpha("black", 0.1))
+          
+          
+          track_ID = vector(mode='list', length=length(unique(fake_data_last[,"ID"])))
+          kek = fragment.stitcher(u_first = fake_data_first,
+                                  u_last = fake_data_last,
+                                  u_track_ID = track_ID,
+                                  u_time_window = 1,
+                                  u_x_diff = 2,
+                                  u_y_diff = 2)
+                            
+          
+          
+          
+          
+          fake_results = sequential.fragment.stitcher(u_first = fake_data_first,
+                                                      u_last = fake_data_last,
+                                                      u_track_ID = track_ID,
+                                                      u_time_window_start = 1,
+                                                      u_time_window_steps = 0,
+                                                      u_x_diff_start = 2,
+                                                      u_x_diff_steps = 1,
+                                                      u_y_diff_start = 2,
+                                                      u_y_diff_steps = 1,
+                                                      iterations = 2)
+                                       
+          fake_results[[3]]
+          
+          
           
           
           
