@@ -9,8 +9,6 @@
 
 ## file patch, libraries & custom functions ####
 
-     library(stringr)              ## str_pad to make tracklet ID length uniform
-
      ## paths
      dir_data = "C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/"
      dir_github = "C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/Github repository/"
@@ -104,11 +102,8 @@
      
      ## finds candidates for fragment stitching
      ## produces: first- and last-data matrix, list with stitched tracks
-     fragment.stitcher = function (u_first, u_last, u_time_window, u_x_diff, u_y_diff) {
+     fragment.stitcher = function (u_first, u_last, u_track_ID, u_time_window, u_x_diff, u_y_diff) {
        
-          ## list for track_IDs
-          track_ID = vector(mode='list', length=length(unique(u_last[,"ID"])))
-          
           ## variables for the while loop
           proceed = TRUE
           n=1
@@ -132,8 +127,8 @@
                ## if one tracklet left: stitch
                if (nrow(runner_candidate_time_x_y) == 1) {
                     
-                    ## update track_ID
-                    track_ID[[runner_endpoint[,"ID"]]] = paste(track_ID[[n]],runner_endpoint[,"ID"],runner_candidate_time_x_y[,"ID"],sep=",")
+                    ## update u_track_ID
+                    u_track_ID[[runner_endpoint[,"ID"]]] = paste(u_track_ID[[n]],runner_endpoint[,"ID"],runner_candidate_time_x_y[,"ID"],sep=",")
                     
                     ## remove endpoint of runner_endpoint
                     u_last = u_last[-which(u_last[,"ID"] == runner_endpoint[,"ID"]),, drop=FALSE]
@@ -156,7 +151,7 @@
           }
           
           ## make return list
-          return_list = list(u_first, u_last, track_ID)     
+          return_list = list(u_first, u_last, u_track_ID)     
           
           ## function output
           return(return_list)
@@ -164,14 +159,10 @@
           
      ## sequentially apply fragment.stitcher to the data, updating parameters on the way
      ## produces: first- and last-data matrix, list with stitched tracks
-     sequential.fragment.stitcher = function(u_first,u_last, u_time_window_start, u_time_window_steps,u_x_diff_start, u_x_diff_steps,u_y_diff_start, u_y_diff_steps,iterations) {
-          
-          ## track_ID list
-          track_ID_list = vector(mode='list', length=length(unique(u_last[,"ID"])))
+     sequential.fragment.stitcher = function(u_first, u_last, u_track_ID, u_time_window_start, u_time_window_steps,u_x_diff_start, u_x_diff_steps,u_y_diff_start, u_y_diff_steps,iterations) {
           
           ## run the function on the starting values
-          runner_data = fragment.stitcher(u_first, u_last, u_time_window_start, u_x_diff_start, u_y_diff_start)
-          
+          runner_data = fragment.stitcher(u_first, u_last, u_track_ID, u_time_window_start, u_x_diff_start, u_y_diff_start)
           
           for (n in 1:iterations){
                
@@ -184,11 +175,10 @@
                y_diff = u_y_diff_start + (n*u_y_diff_steps) 
                
                ## rerun function
-               runner_data = fragment.stitcher(runner_data[[1]], runner_data[[2]], time_window, x_diff, y_diff)
-               track_ID_list[[n]] = runner_data[[3]]
+               runner_data = fragment.stitcher(runner_data[[1]], runner_data[[2]], runner_data[[3]], time_window, x_diff, y_diff)
+
           }
-          runner_data[[4]] = track_ID_list
-          return(runner_data, track_ID_list)
+          return(runner_data)
      }
      
      
@@ -338,9 +328,13 @@
           
           tictoc::tic()
           
+          ## list for track_IDs
+          track_ID = vector(mode='list', length=length(unique(stitching_data_last[,"ID"])))
+          
           ## sequential stitching
           seq_results = sequential.fragment.stitcher(u_first = stitching_data_first,
                                                      u_last = stitching_data_last,
+                                                     u_track_ID = track_ID,
                                                      u_time_window_start = 1,
                                                      u_time_window_steps = 0.1,
                                                      u_x_diff_start = 1,
