@@ -116,7 +116,7 @@
           while (proceed == TRUE) {
                
                ## take endpoint
-               runner_endpoint = u_last[which(u_last[,"ID"] == n),,drop=FALSE]
+               runner_endpoint = u_last[n,,drop=FALSE]
 
                ## select all startpoints, that the come after runner_endpoint and are within u_time_window
                runner_candidates_time = u_first[which(u_first[,"frame_number"] > as.numeric(runner_endpoint[,"frame_number"]) & 
@@ -134,11 +134,11 @@
                     ## update u_track_ID
                     u_track_ID[[runner_endpoint[,"ID"]]] = as.numeric(c(u_track_ID[[runner_endpoint[,"ID"]]], runner_endpoint[,"ID"], runner_candidate_time_x_y[,"ID"]))
                     
-                    ## remove endpoint of runner_endpoint
-                    u_last = u_last[-which(u_last[,"ID"] == runner_endpoint[,"ID"]),, drop=FALSE]
-                    
                     ## update new endpoint ID
                     u_last[which(u_last[,"ID"] == runner_candidate_time_x_y[,"ID"]),"ID"] = as.numeric(runner_endpoint[,"ID"])
+                    
+                    ## remove endpoint of runner_endpoint
+                    u_last = u_last[-which(u_last[,"ID"] == runner_endpoint[,"ID"]),, drop=FALSE]
                     
                     ## remove now stitched startpoint runner_candidate_time_x_y
                     u_first = u_first[-which(u_first[,"ID"] == runner_candidate_time_x_y[,"ID"]),, drop=FALSE]
@@ -146,7 +146,7 @@
                } else {
                     
                     ## update u_track_ID
-                    u_track_ID[[runner_endpoint[,"ID"]]] = as.numeric(c(u_track_ID[[runner_endpoint[,"ID"]]], runner_endpoint[,"ID"]))
+                    # u_track_ID[[runner_endpoint[,"ID"]]] = as.numeric(c(u_track_ID[[runner_endpoint[,"ID"]]], runner_endpoint[,"ID"]))
                     
                     ## go to next tracklet
                     n = n + 1
@@ -156,6 +156,9 @@
                }
           
           }
+          
+          ## only keep unique items in u_track_ID
+          u_track_ID = lapply(u_track_ID, unique)
           
           ## make return list
           return_list = list(u_first, u_last, u_track_ID)     
@@ -194,14 +197,30 @@
           return(runner_data)
      }
      
-     
-     
-     
-     
-     
-     
      ## extract pretty data from stitching
-     pretty.data.extractor = function (u_first, u_full_data) {
+     ## produces a list, where each entry is a stitched track
+     pretty.data.extractor = function (u_track_ID, u_pretty_data) {
+
+          # u_track_ID = seq_results[[3]]
+                    
+          for (n in 1:length(u_track_ID)){
+               
+               
+               
+               
+          }
+          
+          
+          ## extract tracks
+          
+          ## does not keep the IDs from the list position
+          ## kek = Filter(Negate(is.null),u_track_ID)
+          
+          is.null(u_track_ID)
+          which(u_track_ID != NULL)
+          
+          lapply(u_track_ID, function(x), )
+          
           
           ## 1. EXTRACT THE ORIGINAL IDs
           
@@ -239,7 +258,7 @@
           ## output
           return(output_list)
      }
-          ## produces a list, where each entry is a stitched track
+          
      
      ## calculates step size between two datapoints
      distance.calculator = function(u_data) {
@@ -354,7 +373,14 @@
                                                      u_y_diff_steps = 0.5,
                                                      iterations = 100)
           
-          head(seq_results[[3]],40)
+          
+          
+          
+          
+          
+          
+          
+          
           
           
           ## generate new test data
@@ -389,9 +415,9 @@
           kek = fragment.stitcher(u_first = fake_data_first,
                                   u_last = fake_data_last,
                                   u_track_ID = track_ID,
-                                  u_time_window = 1,
-                                  u_x_diff = 2,
-                                  u_y_diff = 2)
+                                  u_time_window = 5,
+                                  u_x_diff = 30,
+                                  u_y_diff = 30)
                             
           
           
@@ -406,7 +432,7 @@
                                                       u_x_diff_steps = 1,
                                                       u_y_diff_start = 2,
                                                       u_y_diff_steps = 1,
-                                                      iterations = 2)
+                                                      iterations = 1)
                                        
           fake_results[[3]]
           
