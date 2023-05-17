@@ -106,7 +106,7 @@
        
           ## for testing
           # u_first = fake_data_first; u_last = fake_data_last; u_track_ID = track_ID
-          # u_time_window = 1; u_x_diff = 1; u_y_diff = 1
+          # u_time_window = 1; u_x_diff = 2; u_y_diff = 2
           
           ## variables for the while loop
           proceed = TRUE
@@ -132,13 +132,14 @@
                if (nrow(runner_candidate_time_x_y) == 1) {
                     
                     ## update u_track_ID
-                    u_track_ID[[runner_endpoint[,"ID"]]] = as.numeric(c(u_track_ID[[runner_endpoint[,"ID"]]], runner_endpoint[,"ID"], runner_candidate_time_x_y[,"ID"]))
+                    runner_IDs = as.numeric(c(u_track_ID[[runner_endpoint[,"ID"]]], runner_endpoint[,"ID"], runner_candidate_time_x_y[,"ID"]))
+                    u_track_ID[[min(runner_IDs)]] = as.numeric(c(u_track_ID[[runner_endpoint[,"ID"]]], runner_endpoint[,"ID"], runner_candidate_time_x_y[,"ID"]))
+                         
+                    ## remove endpoint of runner_endpoint
+                    u_last = u_last[-which(u_last[,"ID"] == runner_endpoint[,"ID"]),, drop=FALSE]
                     
                     ## update new endpoint ID
                     u_last[which(u_last[,"ID"] == runner_candidate_time_x_y[,"ID"]),"ID"] = as.numeric(runner_endpoint[,"ID"])
-                    
-                    ## remove endpoint of runner_endpoint
-                    u_last = u_last[-which(u_last[,"ID"] == runner_endpoint[,"ID"]),, drop=FALSE]
                     
                     ## remove now stitched startpoint runner_candidate_time_x_y
                     u_first = u_first[-which(u_first[,"ID"] == runner_candidate_time_x_y[,"ID"]),, drop=FALSE]
@@ -199,16 +200,55 @@
      
      ## extract pretty data from stitching
      ## produces a list, where each entry is a stitched track
-     pretty.data.extractor = function (u_track_ID, u_pretty_data) {
+     pretty.data.extractor = function (u_track_ID, u_data) {
 
           # u_track_ID = seq_results[[3]]
                     
           for (n in 1:length(u_track_ID)){
                
+               ## go through track IDs
+               runner = u_track_ID[[n]]
+               
+               ## make a fake list
+               fake_list = vector(mode='list', length=5)
+               fake_list[[1]] = NULL
+               fake_list[[2]] = c(1,4)
+               fake_list[[3]] = 7
+               fake_list[[4]] = c(4,5,6)
+               fake_list[[5]] = NULL
+               fake_list[[6]] = c(6,7)
+               fake_list[[7]] = NULL
+               
+               runner = fake_list[[n]]
                
                
+               lapply(fake_list, function(x) intersect(x, fake_list[[n]]))
+               
+               
+               
+               
+               intersect(fake_list,fake_list[[n]])
+               
+               
+               
+               ## get one vector out of this
+               fake_list = 
+               
+               
+               sapply(u_track_ID, function(x), )
+               
+          
+               
+               
+               
+               
+               ## extract
+               output_list[[n]] = pretty_data[u_data[,"ID"] %in% runner, ]
                
           }
+          
+     }
+      
           
           
           ## extract tracks
@@ -366,14 +406,16 @@
                                                      u_last = stitching_data_last,
                                                      u_track_ID = track_ID,
                                                      u_time_window_start = 1,
-                                                     u_time_window_steps = 0.2,
+                                                     u_time_window_steps = 0.4,
                                                      u_x_diff_start = 1,
-                                                     u_x_diff_steps = 0.5,
+                                                     u_x_diff_steps = 0.3,
                                                      u_y_diff_start = 1,
-                                                     u_y_diff_steps = 0.5,
-                                                     iterations = 100)
+                                                     u_y_diff_steps = 0.3,
+                                                     iterations = 3000)
           
+          sum(sapply(seq_results[[3]], is.null))
           
+          head(seq_results[[3]],50)
           
           
           
@@ -415,9 +457,9 @@
           kek = fragment.stitcher(u_first = fake_data_first,
                                   u_last = fake_data_last,
                                   u_track_ID = track_ID,
-                                  u_time_window = 5,
-                                  u_x_diff = 30,
-                                  u_y_diff = 30)
+                                  u_time_window = 1,
+                                  u_x_diff = 2,
+                                  u_y_diff = 2)
                             
           
           
@@ -428,13 +470,34 @@
                                                       u_track_ID = track_ID,
                                                       u_time_window_start = 1,
                                                       u_time_window_steps = 0,
-                                                      u_x_diff_start = 2,
-                                                      u_x_diff_steps = 1,
-                                                      u_y_diff_start = 2,
-                                                      u_y_diff_steps = 1,
-                                                      iterations = 1)
-                                       
-          fake_results[[3]]
+                                                      u_x_diff_start = 0.5,
+                                                      u_x_diff_steps = 0.5,
+                                                      u_y_diff_start = 0.5,
+                                                      u_y_diff_steps = 0.5,
+                                                      iterations = 3)
+                                      
+          iter_one = fragment.stitcher(u_first = fake_data_first,
+                                       u_last = fake_data_last,
+                                       u_track_ID = track_ID,
+                                       u_time_window = 1,
+                                       u_x_diff = 1,
+                                       u_y_diff = 1)
+          
+          iter_two = fragment.stitcher(u_first = iter_one[[1]],
+                                       u_last = iter_one[[2]],
+                                       u_track_ID = iter_one[[3]],
+                                       u_time_window = 1,
+                                       u_x_diff = 1.5,
+                                       u_y_diff = 1.5)
+          
+          iter_three = fragment.stitcher(u_first = iter_two[[1]],
+                                       u_last = iter_two[[2]],
+                                       u_track_ID = iter_two[[3]],
+                                       u_time_window = 1,
+                                       u_x_diff = 2,
+                                       u_y_diff = 2)
+                            
+          
           
           
           
