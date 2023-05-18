@@ -233,110 +233,43 @@
                if (is.null(while_runner)) {matches_list[[n]] = while_runner} else {matches_list[[min(while_runner)]] = while_runner}
           }
           
-          ## output
-          return(matches_list)
-     }
-     
-     
-     ## make a fake list
-     fake_list = vector(mode='list', length=5)
-     fake_list[[1]] = NULL
-     fake_list[[2]] = c(2,4)
-     fake_list[[3]] = NULL
-     fake_list[[4]] = c(4,5,6)
-     fake_list[[5]] = NULL
-     fake_list[[6]] = c(6,7)
-     fake_list[[7]] = NULL
-     
-     kek = pretty.data.extractor(u_track_ID = seq_results[[3]])
-               
-          
-     kek <- kek[!sapply(kek,is.null)]
-          
-          
-          
-          ## find matches to first entry of first entr
-               runner_indices = which(apply(t(sapply(fake_list, function(x) runner %in% x)), 1, function(x) sum(x)) >= 1)
-               
-               
-               intersect(fake_list,fake_list[[n]])
-               
-               
-               ## Some example data
-               ll <- list(1:4, 5:6, 7:12, 1:12)
-               ll <- lapply(ll, as.character)
-               
-               which(sapply(ll, FUN=function(X) "12" %in% X))
-               
-               
-               ## get one vector out of this
-               fake_list = 
-               
-               
-               sapply(u_track_ID, function(x), )
-               
-          
-               
-               
-               
-               
-               ## extract
-               output_list[[n]] = pretty_data[u_data[,"ID"] %in% runner, ]
-               
-          }
-          
-     
-      
-          
-          
-          ## extract tracks
-          
-          ## does not keep the IDs from the list position
-          ## kek = Filter(Negate(is.null),u_track_ID)
-          
-          is.null(u_track_ID)
-          which(u_track_ID != NULL)
-          
-          lapply(u_track_ID, function(x), )
-          
-          
-          ## 1. EXTRACT THE ORIGINAL IDs
-          
-          ## extract the original id for every stitched tracklet
-          original_tracklets_for_each_stitched_tracklets = vector(mode='list', length=length(unique(u_first[,"ID"])))
-          
-          ## runs through the first vector and extracts data
-          for (n in 1:length(unique(u_first[,"ID"]))) {
-               
-               ## run through all stitched tracklets
-               runner_ID = unique(u_first[,"ID"])[n]
-               
-               ## find original tracklets
-               original_tracklets_for_each_stitched_tracklets[[n]] = as.numeric(u_first[which(u_first[,"ID"] == runner_ID),"original_ID"])
-               
-               ## rename list entry to stitched tracklet ID
-               names(original_tracklets_for_each_stitched_tracklets)[n] = runner_ID
-          }
-          
-          ## 2. ASSEMBLE NEWLY STITCHED TRACKLETS
-          
-          output_list = vector(mode='list', length=length(original_tracklets_for_each_stitched_tracklets))
-          
-          for (n in 1:length(original_tracklets_for_each_stitched_tracklets)) {
-               
-               ## get ID, and all IDs that belong to the track
-               runner_ID = names(original_tracklets_for_each_stitched_tracklets)[n]
-               original_IDs = original_tracklets_for_each_stitched_tracklets[[n]]
-               
-               ## extract from pretty_data
-               output_list[[n]] = pretty_data[pretty_data[,"ID"] %in% original_IDs, ]
-               
-          }
-          
-          ## output
+          ## format output
+          output_list = matches_list[!sapply(matches_list, is.null)]
           return(output_list)
      }
+     
+     ## assembles raw data tracks from track.extractor
+     ## produces: concise df with stitched tracks
+     track.data = function (u_track_ID, u_data) {
           
+          ## add ID_track to df
+          u_data = cbind(u_data, rep(NA, nrow(u_data))); colnames(u_data)[7] = "ID_track"
+          
+          ## output list for dataframes containing track data
+          track_list = vector(mode='list', length=length(u_track_ID))
+          
+          ## run through tracks
+          for (n in 1:length(u_track_ID)) {
+               
+               ## run through list
+               runner = u_track_ID[[n]]
+               
+               ## assemble df, add ID_track col put into list
+               runner_df = u_data[which(u_data[,"ID"] %in% runner),]
+               runner_df[,"ID_track"] = n
+               track_list[[n]] = runner_df
+          }
+          
+          ## output
+          return(track_list)
+     }
+     
+     
+     
+     
+     
+     
+     
      
      ## calculates step size between two datapoints
      distance.calculator = function(u_data) {
@@ -418,8 +351,8 @@
      ## extract first and last datapoint for each tracklet ~ 12 minutes ####
           
           ## load data and make matrix
-          pretty_data = read.table(paste(dir_data,"concise_data.txt", sep=""))
-          pretty_data = as.matrix(pretty_data); rownames(pretty_data) = NULL
+          concise_data = read.table(paste(dir_data,"concise_data.txt", sep=""))
+          concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           
           ## extract first and last item from each tracklet
           first_last_list = first.last.finder(pretty_data)
@@ -842,6 +775,19 @@
                              u_time_window = 1, u_x_diff = 1, u_y_diff = 1)
      
      
+     
+     
+     ## old test data ####
+     
+     ## make a fake list
+     fake_list = vector(mode='list', length=5)
+     fake_list[[1]] = NULL
+     fake_list[[2]] = c(2,4)
+     fake_list[[3]] = NULL
+     fake_list[[4]] = c(4,5,6)
+     fake_list[[5]] = NULL
+     fake_list[[6]] = c(6,7)
+     fake_list[[7]] = NULL
      
      
      ## changes the format of the raw data into something more concise (all in dataframes) ####
