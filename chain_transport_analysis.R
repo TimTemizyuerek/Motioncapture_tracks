@@ -200,35 +200,73 @@
      
      ## extract pretty data from stitching
      ## produces a list, where each entry is a stitched track
-     pretty.data.extractor = function (u_track_ID, u_data) {
+     track.extractor = function (u_track_ID) {
 
-          # u_track_ID = seq_results[[3]]
-                    
+          ## list of matches
+          matches_list = vector(mode='list', length=length(u_track_ID))
+               
+          ## run through loop
           for (n in 1:length(u_track_ID)){
                
                ## go through track IDs
-               runner = u_track_ID[[n]]
+               while_runner = u_track_ID[[n]]
                
-               ## make a fake list
-               fake_list = vector(mode='list', length=5)
-               fake_list[[1]] = NULL
-               fake_list[[2]] = c(1,4)
-               fake_list[[3]] = 7
-               fake_list[[4]] = c(4,5,6)
-               fake_list[[5]] = NULL
-               fake_list[[6]] = c(6,7)
-               fake_list[[7]] = NULL
+               ## use index to find matching elements in list
+               proceed = TRUE
+               while(proceed == TRUE){
+                    
+                    ## take length for below
+                    pre_length = length(while_runner)
+                    
+                    ## use index to find other elements
+                    while_runner = unique(unlist(u_track_ID[while_runner]))
+                    
+                    ## end loop if nothing new was added in last iteration
+                    if (pre_length == length(while_runner)) {proceed = FALSE}
+               }
                
-               runner = fake_list[[n]]
+               ## delete elements from list
+               u_track_ID[sort(while_runner)[2:length(while_runner)]] = NA
+               # u_track_ID[(while_runner)] = NA
                
+               ## add stitched tracklets to output list
+               if (is.null(while_runner)) {matches_list[[n]] = while_runner} else {matches_list[[min(while_runner)]] = while_runner}
+          }
+          
+          ## output
+          return(matches_list)
+     }
+     
+     
+     ## make a fake list
+     fake_list = vector(mode='list', length=5)
+     fake_list[[1]] = NULL
+     fake_list[[2]] = c(2,4)
+     fake_list[[3]] = NULL
+     fake_list[[4]] = c(4,5,6)
+     fake_list[[5]] = NULL
+     fake_list[[6]] = c(6,7)
+     fake_list[[7]] = NULL
+     
+     kek = pretty.data.extractor(u_track_ID = seq_results[[3]])
                
-               lapply(fake_list, function(x) intersect(x, fake_list[[n]]))
-               
-               
+          
+     kek <- kek[!sapply(kek,is.null)]
+          
+          
+          
+          ## find matches to first entry of first entr
+               runner_indices = which(apply(t(sapply(fake_list, function(x) runner %in% x)), 1, function(x) sum(x)) >= 1)
                
                
                intersect(fake_list,fake_list[[n]])
                
+               
+               ## Some example data
+               ll <- list(1:4, 5:6, 7:12, 1:12)
+               ll <- lapply(ll, as.character)
+               
+               which(sapply(ll, FUN=function(X) "12" %in% X))
                
                
                ## get one vector out of this
@@ -247,7 +285,7 @@
                
           }
           
-     }
+     
       
           
           
