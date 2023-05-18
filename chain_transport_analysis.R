@@ -361,7 +361,7 @@
           write.table(first_last_list[[1]], file=paste(dir_github,"stitching_data_first.txt", sep=""), sep="\t")
           write.table(first_last_list[[2]], file=paste(dir_github,"stitching_data_last.txt", sep=""), sep="\t")
           
-     ## stitch tracklets together ~ 40 minutes ####
+     ## stitch tracklets together (3000 iterations < 3 mins) ####
           
           ## load data and make matrix for faster computation
           stitching_data_first = read.table(paste(dir_github,"stitching_data_first.txt", sep="")) 
@@ -384,188 +384,32 @@
                                                      u_y_diff_steps = 0.3,
                                                      iterations = 3000)
           
-          sum(sapply(seq_results[[3]], is.null))
+          ## extract tracks
+          track_list = track.extractor(u_track_ID = seq_results[[3]])
           
-          head(seq_results[[3]],50)
+          ## assemble full track data
+          track_data = track.data(u_track_ID = track_list, u_data = concise_data)
           
-          
-          
-          
-          
-          
-          
-          
-          
-          ## generate new test data
-          fake_data_first = stitching_data_first
-          fake_data_last = stitching_data_last
-          
-          fake_data_first[1,] = c(1,1,2,2,100,1)
-          fake_data_first[2,] = c(3,3,10,8,100,2)
-          fake_data_first[3,] = c(5,5,19,13,100,3)
-          fake_data_first[4,] = c(7,7,24,20,100,4)
-          fake_data_first[5,] = c(9,9,23,11,100,5)
-          fake_data_first[6,] = c(11,11,16,15,100,6)
-          fake_data_first = fake_data_first[-c(7:nrow(fake_data_first)),]
-          
-          fake_data_last[1,] = c(2,2,9,6,100,1)
-          fake_data_last[2,] = c(4,4,18,11,100,2)
-          fake_data_last[3,] = c(6,6,23,18,100,3)
-          fake_data_last[4,] = c(8,8,24,12,100,4)
-          fake_data_last[5,] = c(10,10,16,15,100,5)
-          fake_data_last[6,] = c(12,12,11,10,100,6)
-          fake_data_last = fake_data_last[-c(7:nrow(fake_data_last)),]
-          
-          plot(fake_data_first[,"X"], fake_data_first[,"Y"], col="dodgerblue", pch=16,xlim=c(0,25), ylim=c(0,20))
-          points(fake_data_last[,"X"], fake_data_last[,"Y"], col="darkgoldenrod", pch=16)
-          for (n in 1:6) lines(c(fake_data_first[,"X"][n], fake_data_last[,"X"][n]),c(fake_data_first[,"Y"][n], fake_data_last[,"Y"][n]), lty=2)
-          legend("topleft", legend=c("startpoint", "endpoint"), pch=16,
-                 col = c("dodgerblue", "darkgoldenrod"))
-          for (n in 1:25) abline(v=n, col=scales::alpha("black", 0.1)); for (n in 1:20) abline(h=n, col=scales::alpha("black", 0.1))
-          
-          
-          track_ID = vector(mode='list', length=length(unique(fake_data_last[,"ID"])))
-          kek = fragment.stitcher(u_first = fake_data_first,
-                                  u_last = fake_data_last,
-                                  u_track_ID = track_ID,
-                                  u_time_window = 1,
-                                  u_x_diff = 2,
-                                  u_y_diff = 2)
-                            
-          
-          
-          
-          
-          fake_results = sequential.fragment.stitcher(u_first = fake_data_first,
-                                                      u_last = fake_data_last,
-                                                      u_track_ID = track_ID,
-                                                      u_time_window_start = 1,
-                                                      u_time_window_steps = 0,
-                                                      u_x_diff_start = 0.5,
-                                                      u_x_diff_steps = 0.5,
-                                                      u_y_diff_start = 0.5,
-                                                      u_y_diff_steps = 0.5,
-                                                      iterations = 3)
-                                      
-          iter_one = fragment.stitcher(u_first = fake_data_first,
-                                       u_last = fake_data_last,
-                                       u_track_ID = track_ID,
-                                       u_time_window = 1,
-                                       u_x_diff = 1,
-                                       u_y_diff = 1)
-          
-          iter_two = fragment.stitcher(u_first = iter_one[[1]],
-                                       u_last = iter_one[[2]],
-                                       u_track_ID = iter_one[[3]],
-                                       u_time_window = 1,
-                                       u_x_diff = 1.5,
-                                       u_y_diff = 1.5)
-          
-          iter_three = fragment.stitcher(u_first = iter_two[[1]],
-                                       u_last = iter_two[[2]],
-                                       u_track_ID = iter_two[[3]],
-                                       u_time_window = 1,
-                                       u_x_diff = 2,
-                                       u_y_diff = 2)
-                            
-          
-          
-          
-          
-          
-          
-          ## reconstruct full track data
-          track_data = pretty.data.extractor(u_first = seq_results[[1]], u_full_data = pretty_data)
-     
      ## testing ####
           
-          still_works = sequential.fragment.stitcher(u_first = stitching_data_first,
-                                                     u_last = stitching_data_last,
-                                                     u_time_window_start = 1,
-                                                     u_time_window_steps = 1,
-                                                     u_x_diff_start = 1,
-                                                     u_x_diff_steps = 0.2,
-                                                     u_y_diff_start = 1,
-                                                     u_y_diff_steps = 0.2,
-                                                     iterations = 10)
+          ## are there overlapping time frames in the tracks (you hope for FALSE)
+          sum(sapply(track_data, function(x) length(unique(x[,"frame_number"])) == nrow(x))) != length(track_data)
           
-          ## create test data
-          tracklet_1 = data.frame("frame_number"=1:10,   "time_in_deciseconds"=(1:10)/10,   "X"=101:110,   "Y"=101:110,   "Z"=101:110,   "ID"= rep(1,10)  ); tracklet_1 = as.matrix(tracklet_1)
-          tracklet_2 = data.frame("frame_number"=12:20,  "time_in_deciseconds"=(12:20)/10,  "X"=112:120,   "Y"=112:120,   "Z"=112:120,   "ID"= rep(2,9)   ); tracklet_2 = as.matrix(tracklet_2)
-          tracklet_3 = data.frame("frame_number"=25:30,  "time_in_deciseconds"=(25:30)/10,  "X"=115:120,   "Y"=115:120,   "Z"=115:120,   "ID"= rep(3,6)   ); tracklet_3 = as.matrix(tracklet_3)
-          
-          ## wrong place, right time
-          tracklet_4 = data.frame("frame_number"=32:40,  "time_in_deciseconds"=(32:40)/10,  "X"=32:40,     "Y"=32:40,     "Z"=32:40,     "ID"= rep(4,9)   ); tracklet_4 = as.matrix(tracklet_4)
-          
-          ## right place, wrong time
-          tracklet_5 = data.frame("frame_number"=1:11,  "time_in_deciseconds"=(1:11)/10,  "X"=120:130,     "Y"=120:130,     "Z"=120:130,     "ID"= rep(5,11)   ); tracklet_5 = as.matrix(tracklet_5)
-          
-          ## combine to test data
-          test_pretty_data = rbind(tracklet_1, tracklet_2, tracklet_3, tracklet_4, tracklet_5)
-          
-          ## generate first_and_last
-          test_first_last = first.last.finder(test_pretty_data)
+          ## plot tracks
+          ## placeholder for the loop
+          n=1
           
           
+          runner_track = track_data[[n]]
           
-          ## test stitching
-          kek = sequential.fragment.stitcher(u_first = test_first_last[[1]],
-                                             u_last = test_first_last[[2]],
-                                             u_time_window_start = 1,
-                                             u_time_window_steps = 1,
-                                             u_x_diff_start = 1,
-                                             u_x_diff_steps = 1,
-                                             u_y_diff_start = 1,
-                                             u_y_diff_steps = 1,
-                                             iterations = 10)
+          palette(RColorBrewer::brewer.pal(12, "Set3"))
+          plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=0.3)
           
           
           
           
-          iter_1 = fragment.stitcher(stitching_data_first, stitching_data_last, 1,1,1)
           
           
-          
-          iter_2 = fragment.stitcher(iter_1[[1]], iter_1[[2]], 2,2,2)
-          iter_3 = fragment.stitcher(iter_2[[1]], iter_2[[2]], 3,3,3)
-          iter_4 = fragment.stitcher(iter_3[[1]], iter_3[[2]], 4,4,4)
-          iter_5 = fragment.stitcher(iter_4[[1]], iter_4[[2]], 5,5,5)
-          iter_6 = fragment.stitcher(iter_5[[1]], iter_5[[2]], 6,6,6)
-          iter_7 = fragment.stitcher(iter_6[[1]], iter_6[[2]], 7,7,7)
-          iter_8 = fragment.stitcher(iter_7[[1]], iter_7[[2]], 8,8,8)
-          iter_9 = fragment.stitcher(iter_8[[1]], iter_8[[2]], 9,9,9)
-          iter_10 = fragment.stitcher(iter_9[[1]], iter_9[[2]], 10,10,10)
-          iter_11 = fragment.stitcher(iter_10[[1]], iter_10[[2]], 11,11,11)
-          iter_12 = fragment.stitcher(iter_11[[1]], iter_11[[2]], 12,12,12)
-          iter_13 = fragment.stitcher(iter_12[[1]], iter_12[[2]], 13,13,13)
-          iter_14 = fragment.stitcher(iter_13[[1]], iter_13[[2]], 14,14,14)
-          iter_15 = fragment.stitcher(iter_14[[1]], iter_14[[2]], 15,15,15)
-          iter_16 = fragment.stitcher(iter_15[[1]], iter_15[[2]], 16,16,16)
-          
-          
-          iter_16
-          
-          
-          
-          ## stitching of tracklets within a track must be chronological
-          
-          sub_track_first_tracklet = lapply(track_data, function(x) first.last.finder(x)[[1]])
-          sub_track_last_tracklet = lapply(track_data, function(x) first.last.finder(x)[[2]])
-          
-          first_is_increasing = lapply(sub_track_first_tracklet, function(x) !is.unsorted(x[,"time_in_deciseconds"]))
-          last_is_increasing = lapply(sub_track_last_tracklet, function(x) !is.unsorted(x[,"time_in_deciseconds"]))
-          
-          which(first_is_increasing==FALSE)
-          which(last_is_increasing==FALSE)
-          
-          first_tn = sub_track_first_tracklet[[29]]
-          runner_ID_subset= sub_track_last_tracklet[[29]]
-          
-          head(first_tn,5)
-          head(last_tn,5)
-          
-          vec = vector()
-          for (n in 1:nrow(first_tn)-1) vec[n] = last_tn[n,"time_in_deciseconds"] < first_tn[n+1,"time_in_deciseconds"]
           
 ## 2. DATA ANALYSIS (WAITING TIMES) ####
      ## calculate waiting times #### 
@@ -788,6 +632,170 @@
      fake_list[[5]] = NULL
      fake_list[[6]] = c(6,7)
      fake_list[[7]] = NULL
+     
+     ## generate new test data
+     fake_data_first = stitching_data_first
+     fake_data_last = stitching_data_last
+     
+     fake_data_first[1,] = c(1,1,2,2,100,1)
+     fake_data_first[2,] = c(3,3,10,8,100,2)
+     fake_data_first[3,] = c(5,5,19,13,100,3)
+     fake_data_first[4,] = c(7,7,24,20,100,4)
+     fake_data_first[5,] = c(9,9,23,11,100,5)
+     fake_data_first[6,] = c(11,11,16,15,100,6)
+     fake_data_first = fake_data_first[-c(7:nrow(fake_data_first)),]
+     
+     fake_data_last[1,] = c(2,2,9,6,100,1)
+     fake_data_last[2,] = c(4,4,18,11,100,2)
+     fake_data_last[3,] = c(6,6,23,18,100,3)
+     fake_data_last[4,] = c(8,8,24,12,100,4)
+     fake_data_last[5,] = c(10,10,16,15,100,5)
+     fake_data_last[6,] = c(12,12,11,10,100,6)
+     fake_data_last = fake_data_last[-c(7:nrow(fake_data_last)),]
+     
+     plot(fake_data_first[,"X"], fake_data_first[,"Y"], col="dodgerblue", pch=16,xlim=c(0,25), ylim=c(0,20))
+     points(fake_data_last[,"X"], fake_data_last[,"Y"], col="darkgoldenrod", pch=16)
+     for (n in 1:6) lines(c(fake_data_first[,"X"][n], fake_data_last[,"X"][n]),c(fake_data_first[,"Y"][n], fake_data_last[,"Y"][n]), lty=2)
+     legend("topleft", legend=c("startpoint", "endpoint"), pch=16,
+            col = c("dodgerblue", "darkgoldenrod"))
+     for (n in 1:25) abline(v=n, col=scales::alpha("black", 0.1)); for (n in 1:20) abline(h=n, col=scales::alpha("black", 0.1))
+     
+     
+     track_ID = vector(mode='list', length=length(unique(fake_data_last[,"ID"])))
+     kek = fragment.stitcher(u_first = fake_data_first,
+                             u_last = fake_data_last,
+                             u_track_ID = track_ID,
+                             u_time_window = 1,
+                             u_x_diff = 2,
+                             u_y_diff = 2)
+     
+     
+     
+     
+     
+     fake_results = sequential.fragment.stitcher(u_first = fake_data_first,
+                                                 u_last = fake_data_last,
+                                                 u_track_ID = track_ID,
+                                                 u_time_window_start = 1,
+                                                 u_time_window_steps = 0,
+                                                 u_x_diff_start = 0.5,
+                                                 u_x_diff_steps = 0.5,
+                                                 u_y_diff_start = 0.5,
+                                                 u_y_diff_steps = 0.5,
+                                                 iterations = 3)
+     
+     iter_one = fragment.stitcher(u_first = fake_data_first,
+                                  u_last = fake_data_last,
+                                  u_track_ID = track_ID,
+                                  u_time_window = 1,
+                                  u_x_diff = 1,
+                                  u_y_diff = 1)
+     
+     iter_two = fragment.stitcher(u_first = iter_one[[1]],
+                                  u_last = iter_one[[2]],
+                                  u_track_ID = iter_one[[3]],
+                                  u_time_window = 1,
+                                  u_x_diff = 1.5,
+                                  u_y_diff = 1.5)
+     
+     iter_three = fragment.stitcher(u_first = iter_two[[1]],
+                                    u_last = iter_two[[2]],
+                                    u_track_ID = iter_two[[3]],
+                                    u_time_window = 1,
+                                    u_x_diff = 2,
+                                    u_y_diff = 2)
+     
+     
+     
+     ## random old stuff ####
+     
+     still_works = sequential.fragment.stitcher(u_first = stitching_data_first,
+                                                u_last = stitching_data_last,
+                                                u_time_window_start = 1,
+                                                u_time_window_steps = 1,
+                                                u_x_diff_start = 1,
+                                                u_x_diff_steps = 0.2,
+                                                u_y_diff_start = 1,
+                                                u_y_diff_steps = 0.2,
+                                                iterations = 10)
+     
+     ## create test data
+     tracklet_1 = data.frame("frame_number"=1:10,   "time_in_deciseconds"=(1:10)/10,   "X"=101:110,   "Y"=101:110,   "Z"=101:110,   "ID"= rep(1,10)  ); tracklet_1 = as.matrix(tracklet_1)
+     tracklet_2 = data.frame("frame_number"=12:20,  "time_in_deciseconds"=(12:20)/10,  "X"=112:120,   "Y"=112:120,   "Z"=112:120,   "ID"= rep(2,9)   ); tracklet_2 = as.matrix(tracklet_2)
+     tracklet_3 = data.frame("frame_number"=25:30,  "time_in_deciseconds"=(25:30)/10,  "X"=115:120,   "Y"=115:120,   "Z"=115:120,   "ID"= rep(3,6)   ); tracklet_3 = as.matrix(tracklet_3)
+     
+     ## wrong place, right time
+     tracklet_4 = data.frame("frame_number"=32:40,  "time_in_deciseconds"=(32:40)/10,  "X"=32:40,     "Y"=32:40,     "Z"=32:40,     "ID"= rep(4,9)   ); tracklet_4 = as.matrix(tracklet_4)
+     
+     ## right place, wrong time
+     tracklet_5 = data.frame("frame_number"=1:11,  "time_in_deciseconds"=(1:11)/10,  "X"=120:130,     "Y"=120:130,     "Z"=120:130,     "ID"= rep(5,11)   ); tracklet_5 = as.matrix(tracklet_5)
+     
+     ## combine to test data
+     test_pretty_data = rbind(tracklet_1, tracklet_2, tracklet_3, tracklet_4, tracklet_5)
+     
+     ## generate first_and_last
+     test_first_last = first.last.finder(test_pretty_data)
+     
+     
+     
+     ## test stitching
+     kek = sequential.fragment.stitcher(u_first = test_first_last[[1]],
+                                        u_last = test_first_last[[2]],
+                                        u_time_window_start = 1,
+                                        u_time_window_steps = 1,
+                                        u_x_diff_start = 1,
+                                        u_x_diff_steps = 1,
+                                        u_y_diff_start = 1,
+                                        u_y_diff_steps = 1,
+                                        iterations = 10)
+     
+     
+     
+     
+     iter_1 = fragment.stitcher(stitching_data_first, stitching_data_last, 1,1,1)
+     
+     
+     
+     iter_2 = fragment.stitcher(iter_1[[1]], iter_1[[2]], 2,2,2)
+     iter_3 = fragment.stitcher(iter_2[[1]], iter_2[[2]], 3,3,3)
+     iter_4 = fragment.stitcher(iter_3[[1]], iter_3[[2]], 4,4,4)
+     iter_5 = fragment.stitcher(iter_4[[1]], iter_4[[2]], 5,5,5)
+     iter_6 = fragment.stitcher(iter_5[[1]], iter_5[[2]], 6,6,6)
+     iter_7 = fragment.stitcher(iter_6[[1]], iter_6[[2]], 7,7,7)
+     iter_8 = fragment.stitcher(iter_7[[1]], iter_7[[2]], 8,8,8)
+     iter_9 = fragment.stitcher(iter_8[[1]], iter_8[[2]], 9,9,9)
+     iter_10 = fragment.stitcher(iter_9[[1]], iter_9[[2]], 10,10,10)
+     iter_11 = fragment.stitcher(iter_10[[1]], iter_10[[2]], 11,11,11)
+     iter_12 = fragment.stitcher(iter_11[[1]], iter_11[[2]], 12,12,12)
+     iter_13 = fragment.stitcher(iter_12[[1]], iter_12[[2]], 13,13,13)
+     iter_14 = fragment.stitcher(iter_13[[1]], iter_13[[2]], 14,14,14)
+     iter_15 = fragment.stitcher(iter_14[[1]], iter_14[[2]], 15,15,15)
+     iter_16 = fragment.stitcher(iter_15[[1]], iter_15[[2]], 16,16,16)
+     
+     
+     iter_16
+     
+     
+     
+     ## stitching of tracklets within a track must be chronological
+     
+     sub_track_first_tracklet = lapply(track_data, function(x) first.last.finder(x)[[1]])
+     sub_track_last_tracklet = lapply(track_data, function(x) first.last.finder(x)[[2]])
+     
+     first_is_increasing = lapply(sub_track_first_tracklet, function(x) !is.unsorted(x[,"time_in_deciseconds"]))
+     last_is_increasing = lapply(sub_track_last_tracklet, function(x) !is.unsorted(x[,"time_in_deciseconds"]))
+     
+     which(first_is_increasing==FALSE)
+     which(last_is_increasing==FALSE)
+     
+     first_tn = sub_track_first_tracklet[[29]]
+     runner_ID_subset= sub_track_last_tracklet[[29]]
+     
+     head(first_tn,5)
+     head(last_tn,5)
+     
+     vec = vector()
+     for (n in 1:nrow(first_tn)-1) vec[n] = last_tn[n,"time_in_deciseconds"] < first_tn[n+1,"time_in_deciseconds"]
      
      
      ## changes the format of the raw data into something more concise (all in dataframes) ####
