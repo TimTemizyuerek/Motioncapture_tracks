@@ -401,16 +401,14 @@
           ## plot tracks
           ## placeholder for the loop
           n=1
-          
-          
           runner_track = track_data[[n]]
-          
           palette(RColorBrewer::brewer.pal(12, "Set3"))
-          plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=0.3)
+          plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)
           
+          # write.table(runner_track, file=paste(dir_data,"example_track.txt", sep=""), sep="\t")
           
-          
-          
+          vec = vector()
+          for (n in 1:length(track_data)) vec[n] = length(unique(track_data[[n]][,"ID"]))
           
           
           

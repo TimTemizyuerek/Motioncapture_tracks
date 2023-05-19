@@ -4,30 +4,24 @@
     <title>Low quality motion capture data analysis</title>
     <meta charset="utf-8" />
     <meta name="author" content="Tim Temizyürek" />
-    <script src="libs/header-attrs-2.21/header-attrs.js"></script>
-    <link href="libs/remark-css-0.0.1/default.css" rel="stylesheet" />
-    <link href="libs/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
+    <script src="6min_presentation_files/header-attrs-2.21/header-attrs.js"></script>
+    <link href="6min_presentation_files/remark-css-0.0.1/default.css" rel="stylesheet" />
+    <link href="6min_presentation_files/remark-css-0.0.1/default-fonts.css" rel="stylesheet" />
   </head>
   <body>
     <textarea id="source">
-class: center, middle, inverse, title-slide
 
-.title[
+class: center, middle, inverse   
+background-image: url("bg.jpg")
+background-size: 1500px
+
 # Low quality motion capture data analysis
-]
-.author[
 ### Tim Temizyürek
-]
-.institute[
-### Presentation skills
-]
-.date[
-### 23/24 May 2023
-]
 
 ---
-
-&lt;!-- pictures of the experiment and fragments --&gt;
+background-image: url("fragment.jpg")
+background-size: 300px
+background-position: 90% 30% 
 
 # Introduction
 ### the experiment ...
@@ -35,10 +29,11 @@ class: center, middle, inverse, title-slide
 - 30m trail for leafcutter ants
 - 42 fragments marked for motion capture
 - **WANT**: 2D motion capture over whole trail
-&lt;img src="fragment.jpg" width="2028" /&gt;
-
 
 --
+background-image: url("setup2.jpg")
+background-size: 500px
+background-position: 50% 95%
 
 ### ... and its problems
 
@@ -55,17 +50,39 @@ class: center, middle, inverse, title-slide
 
 &lt;img src="6min_presentation_files/figure-html/hist-1.png" width="50%" /&gt;&lt;img src="6min_presentation_files/figure-html/hist-2.png" width="50%" /&gt;
 
+---
+# Main part
+
+1. loop through end-points
+1. define time/place search window
+1. identify start-points
+1. combine tracklets
+1. repeat at step 1.
+
+![](6min_presentation_files/figure-html/example-1.png)&lt;!-- --&gt;
+
+---
+# Ending
+- code works (hopefully)
+- next up: systematic testing
+
+&lt;img src="6min_presentation_files/figure-html/ending-1.png" style="display: block; margin: auto;" /&gt;
+
+---
+class: center, middle, inverse   
+
+background-image: url("bg.jpg")
+background-size: 1500px
+
+# Thanks for listening :)
+
 
 
 
     </textarea>
 <style data-target="print-only">@media screen {.remark-slide-container{display:block;}.remark-slide-scaler{box-shadow:none;}}</style>
 <script src="https://remarkjs.com/downloads/remark-latest.min.js"></script>
-<script>var slideshow = remark.create({
-"highlightStyle": "github",
-"highlightLines": true,
-"countIncrementalSlides": true
-});
+<script>var slideshow = remark.create();
 if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
   window.dispatchEvent(new Event('resize'));
 });
@@ -143,24 +160,7 @@ if (window.HTMLWidgets) slideshow.on('afterShowSlide', function (slide) {
       links[i].target = '_blank';
     }
   }
-})();
-// adds .remark-code-has-line-highlighted class to <pre> parent elements
-// of code chunks containing highlighted lines with class .remark-code-line-highlighted
-(function(d) {
-  const hlines = d.querySelectorAll('.remark-code-line-highlighted');
-  const preParents = [];
-  const findPreParent = function(line, p = 0) {
-    if (p > 1) return null; // traverse up no further than grandparent
-    const el = line.parentElement;
-    return el.tagName === "PRE" ? el : findPreParent(el, ++p);
-  };
-
-  for (let line of hlines) {
-    let pre = findPreParent(line);
-    if (pre && !preParents.includes(pre)) preParents.push(pre);
-  }
-  preParents.forEach(p => p.classList.add("remark-code-has-line-highlighted"));
-})(document);</script>
+})();</script>
 
 <script>
 slideshow._releaseMath = function(el) {
