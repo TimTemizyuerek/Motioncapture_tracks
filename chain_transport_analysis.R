@@ -336,8 +336,8 @@
           ## produces a vector containing the length of each waiting time
      
 ## 1. DATA PREPARATION (LOADING, TRANSFORMATION, STITCHING) ####
-     ## load raw data and transform to manageable format (output as txt) ~ 10 minutes ####
-     
+     ## load raw data and transform to manageable format (output as .txt) ~ 11 minutes ####
+          
           ## read raw data, and format to easy-to-use-matrix
           raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           raw_concise_data = m.concise.dataframe(raw_data)
@@ -348,6 +348,9 @@
           ## export new dataframe to txt
           write.table(raw_concise_data, file=paste(dir_data,"concise_data.txt", sep=""), sep="\t")
           
+          ## remove concise dataframe to free up space
+          rm(raw_concise_data)
+          
      ## extract first and last datapoint for each tracklet ~ 12 minutes ####
           
           ## load data and make matrix
@@ -355,7 +358,7 @@
           concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           
           ## extract first and last item from each tracklet
-          first_last_list = first.last.finder(pretty_data)
+          first_last_list = first.last.finder(concise_data)
           
           ## export short dataframes
           write.table(first_last_list[[1]], file=paste(dir_github,"stitching_data_first.txt", sep=""), sep="\t")
