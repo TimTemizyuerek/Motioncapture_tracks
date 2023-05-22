@@ -399,11 +399,22 @@
           sum(sapply(track_data, function(x) length(unique(x[,"frame_number"])) == nrow(x))) != length(track_data)
           
           ## plot tracks
-          ## placeholder for the loop
-          n=1
-          runner_track = track_data[[n]]
-          palette(RColorBrewer::brewer.pal(12, "Set3"))
-          plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)
+          for (n in 1:length(track_data)) {
+          
+               runner_track = track_data[[n]]
+               palette(RColorBrewer::brewer.pal(12, "Set3"))
+               
+               ## create file for export
+               png(filename=paste("Track_",n,".png",sep=""))
+               
+               plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)     
+               
+               ## close graphic device
+               dev.off()
+               
+          }
+          
+          
           
           # write.table(runner_track, file=paste(dir_data,"example_track.txt", sep=""), sep="\t")
           
