@@ -28,7 +28,7 @@ background-position: 90% 30%
 
 - 30m trail for leafcutter ants
 - 42 fragments marked for motion capture
-- **WANT**: 2D motion capture over whole trail
+- **WANT**: trajectory over whole trail
 
 --
 background-image: url("setup2.jpg")
@@ -44,9 +44,8 @@ background-position: 50% 95%
 ---
 # Main part
 
-- over 3,800 tracklets in 2h recording
-- stitch tracklets into 42 tracks
-- automate stitching process (&gt;80,000 tracklets total)
+- over 3,800 tracklets in 2h recording (&gt;80,000 tracklets total)
+- stitch into 42 tracks
 
 &lt;img src="6min_presentation_files/figure-html/hist-1.png" width="50%" /&gt;&lt;img src="6min_presentation_files/figure-html/hist-2.png" width="50%" /&gt;
 
@@ -55,42 +54,62 @@ background-position: 50% 95%
 
 1. loop through end-points
 1. define time/place search window
-1. identify start-points
-1. combine tracklets
+1. identify start-points (and combine tracklets)
 1. repeat at step 1.
 
 ![](6min_presentation_files/figure-html/example-1.png)&lt;!-- --&gt;
 
----
-# Main part
-
-1. &lt;style="color:green"&gt;loop through end-points&lt;/&gt;
-1. define time/place search window
-1. identify start-points
-1. combine tracklets
-1. repeat at step 1.
-
-![](6min_presentation_files/figure-html/example2-1.png)&lt;!-- --&gt;
+```
+## [1] "iteration 1"
+```
 
 ---
 # Main part
 
 1. loop through end-points
 1. define time/place search window
-1. identify start-points
-1. combine tracklets
+1. identify start-points (and combine tracklets)
 1. repeat at step 1.
 
-![](6min_presentation_files/figure-html/example3-1.png)&lt;!-- --&gt;
+![](6min_presentation_files/figure-html/examplesd-1.png)&lt;!-- --&gt;
 
+```
+## [1] "iteration 2"
+```
 
 ---
+
+# Main part
+1. loop through end-points
+1. define time/place search window
+1. **identify start-points (and combine tracklets)**
+1. repeat at step 1.
+
+![](6min_presentation_files/figure-html/example2-1.png)&lt;!-- --&gt;
+
+```
+## [1] "iteration 3"
+```
+
+---
+
+# Main part
+1. loop through end-points
+1. define time/place search window
+1. **identify start-points (and combine tracklets)**
+1. repeat at step 1.
+
+![](6min_presentation_files/figure-html/example2123-1.png)&lt;!-- --&gt;
+
+```
+## [1] "iteration 3"
+```
+
+---
+class: center, middle
+
 # Ending
-- code works (hopefully)
-- next up: systematic testing
-
-&lt;img src="6min_presentation_files/figure-html/ending-1.png" style="display: block; margin: auto auto auto 0;" /&gt;
-
+![](6min_presentation_files/figure-html/ending-1.png)&lt;!-- --&gt;
 ---
 class: center, middle, inverse   
 

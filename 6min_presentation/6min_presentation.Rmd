@@ -25,7 +25,7 @@ background-position: 90% 30%
 
 - 30m trail for leafcutter ants
 - 42 fragments marked for motion capture
-- **WANT**: 2D motion capture over whole trail
+- **WANT**: trajectory over whole trail
 
 --
 background-image: url("setup2.jpg")
@@ -41,9 +41,8 @@ background-position: 50% 95%
 ---
 # Main part
 
-- over 3,800 tracklets in 2h recording
-- stitch tracklets into 42 tracks
-- automate stitching process (>80,000 tracklets total)
+- over 3,800 tracklets in 2h recording (>80,000 tracklets total)
+- stitch into 42 tracks
 
 ```{r hist, eval=TRUE, echo=FALSE, fig.show="hold", out.width="50%"}
 
@@ -75,8 +74,7 @@ abline(v=log(60*60*10)); text(log(60*60*10), 1350, "1 hour", pos=4) ## one hour
 
 1. loop through end-points
 1. define time/place search window
-1. identify start-points
-1. combine tracklets
+1. identify start-points (and combine tracklets)
 1. repeat at step 1.
 
 ``` {r example, eval=TRUE, echo=FALSE, fig.width=20}
@@ -98,15 +96,48 @@ lines(c(8,9,10,10,11,12,13,14,15,16), c(5,6,7,6,5,4,3,3,2,3), col="#3c8c5c", lwd
 
 ## search window
 points(3,4, pch=0, col="black", cex=8)
+
+print("iteration 1")
 ```
 
 ---
 # Main part
 
-1. <style="color:green">loop through end-points</>
+1. loop through end-points
 1. define time/place search window
-1. identify start-points
-1. combine tracklets
+1. identify start-points (and combine tracklets)
+1. repeat at step 1.
+
+``` {r examplesd, eval=TRUE, echo=FALSE, fig.width=20}
+
+## plot
+plot(NULL, xlim=c(0,12), ylim=c(0,10), xlab="", ylab="", xaxt="n", yaxt="n")
+
+## tracklet: endpoint
+lines(c(-1,0,1,2,3), c(5,4,3,3,4), col="#752e3b", lwd=4); points(c(-1,0,1,2,3),c(2,4,3,3,4),pch=21, bg="#752e3b", cex=3)
+
+## tracklet: startpoints
+lines(c(4,5,6,7,8,9,9,10,11), c(3,4,2,1,2,2,1,0,-1), col="#3c8c5c", lwd=4); points(c(4,5,6,7,8,9,9,10,11), c(3,4,2,1,2,2,1,0,-1), pch=21, bg="#3c8c5c", cex=3)
+
+## tracklet: startpoints
+lines(c(5,5,6,7,8,9,9,10,11), c(7,8,9,9,10,11,12,13,14), col="#3c8c5c", lwd=4); points(c(5,5,6,7,8,9,9,10,11), c(7,8,9,9,10,11,12,13,14), pch=21, bg="#3c8c5c", cex=3)
+
+## tracklet: startpoints
+lines(c(8,9,10,10,11,12,13,14,15,16), c(5,6,7,6,5,4,3,3,2,3), col="#3c8c5c", lwd=4); points(c(8,9,10,10,11,12,13,14,15,16), c(5,6,7,6,5,4,3,3,2,3), pch=21, bg="#3c8c5c", cex=3)
+
+## search window
+points(3,4, pch=0, col="black", cex=8)
+points(3,4, pch=0, col="black", cex=25)
+
+print("iteration 2")
+```
+
+---
+
+# Main part
+1. loop through end-points
+1. define time/place search window
+1. **identify start-points (and combine tracklets)**
 1. repeat at step 1.
 
 ``` {r example2, eval=TRUE, echo=FALSE, fig.width=20}
@@ -129,18 +160,20 @@ lines(c(8,9,10,10,11,12,13,14,15,16), c(5,6,7,6,5,4,3,3,2,3), col="#3c8c5c", lwd
 ## search window
 points(3,4, pch=0, col="black", cex=8)
 points(3,4, pch=0, col="black", cex=25)
+points(3,4, pch=0, col="black", cex=50)
+
+print("iteration 3")
 ```
 
 ---
-# Main part
 
+# Main part
 1. loop through end-points
 1. define time/place search window
-1. identify start-points
-1. combine tracklets
+1. **identify start-points (and combine tracklets)**
 1. repeat at step 1.
 
-``` {r example3, eval=TRUE, echo=FALSE, fig.width=20}
+``` {r example2123, eval=TRUE, echo=FALSE, fig.width=20}
 
 ## plot
 plot(NULL, xlim=c(0,12), ylim=c(0,10), xlab="", ylab="", xaxt="n", yaxt="n")
@@ -149,7 +182,8 @@ plot(NULL, xlim=c(0,12), ylim=c(0,10), xlab="", ylab="", xaxt="n", yaxt="n")
 lines(c(-1,0,1,2,3), c(5,4,3,3,4), col="#752e3b", lwd=4); points(c(-1,0,1,2,3),c(2,4,3,3,4),pch=21, bg="#752e3b", cex=3)
 
 ## tracklet: startpoints
-lines(c(4,5,6,7,8,9,9,10,11), c(3,4,2,1,2,2,1,0,-1), col="#3c8c5c", lwd=4); points(c(4,5,6,7,8,9,9,10,11), c(3,4,2,1,2,2,1,0,-1), pch=21, bg="#3c8c5c", cex=3)
+lines(c(4,5,6,7,8,9,9,10,11), c(3,4,2,1,2,2,1,0,-1), col="#752e3b", lwd=4); points(c(4,5,6,7,8,9,9,10,11), c(3,4,2,1,2,2,1,0,-1), pch=21, bg="#752e3b", cex=3)
+lines(c(3,4),c(4,3), col="black", lty=2, lwd=4)
 
 ## tracklet: startpoints
 lines(c(5,5,6,7,8,9,9,10,11), c(7,8,9,9,10,11,12,13,14), col="#3c8c5c", lwd=4); points(c(5,5,6,7,8,9,9,10,11), c(7,8,9,9,10,11,12,13,14), pch=21, bg="#3c8c5c", cex=3)
@@ -158,18 +192,18 @@ lines(c(5,5,6,7,8,9,9,10,11), c(7,8,9,9,10,11,12,13,14), col="#3c8c5c", lwd=4); 
 lines(c(8,9,10,10,11,12,13,14,15,16), c(5,6,7,6,5,4,3,3,2,3), col="#3c8c5c", lwd=4); points(c(8,9,10,10,11,12,13,14,15,16), c(5,6,7,6,5,4,3,3,2,3), pch=21, bg="#3c8c5c", cex=3)
 
 ## search window
-points(3,4, pch=0, col="black", cex=8)
-points(3,4, pch=0, col="black", cex=25)
-points(3,4, pch=0, col="black", cex=50)
+## points(3,4, pch=0, col="black", cex=8)
+## points(3,4, pch=0, col="black", cex=25)
+## points(3,4, pch=0, col="black", cex=50)
+
+print("iteration 3")
 ```
 
-
 ---
-# Ending
-- code works (hopefully)
-- next up: systematic testing
+class: center, middle
 
-```{r ending, eval=TRUE, echo=FALSE, fig.width=7, fig.align = 'left'}
+# Ending
+```{r ending, eval=TRUE, echo=FALSE, fig.width=7.5, fig.height=7.5}
 
 ## god forgive me
 # vec = c(140,15,49,72,57,19,57,67,8,11,143,19,123,70,28,128,59,17,42,53,39,49,127,108,48,17,29,22,18,3,4,101,12,14,13,19,12,4,70,5,86,121,45,27,3,34,39,29,2,2,13,66,4,64,79,72,81,19,171,25,86,2,52,5,55,16,24,16,15,17,46,4,6,31,18,3,25,6,137,2,12,78,3,11,8,84,75,2,6,2,2,10,15,23,2,3,2,5,4)
@@ -184,7 +218,6 @@ plot(example_track[,"X"], example_track[,"Y"], col=example_track[,"ID"],pch=16, 
      xlab="X (m)", ylab="Y (m)")
 text(3.9,-2, "140 tracklets")
 ```
-
 ---
 class: center, middle, inverse   
 
