@@ -407,7 +407,18 @@
           }
           overlapping_time_test(track_data)
           
-          ## What is the distance (normalized by time) between tracklets, is it realistic?
+          ## Is any tracklet used multiple times?
+          tracklets_used_multiple_times = function(u_track_data) {
+               if (sum(duplicated(unlist(lapply(track_data, function(x) unique(x[,"ID"]))))) == 0)
+                    print("TEST PASSED: no tracklet was used in more than one track")
+               else {
+                    print("TEST FAILED: at least one tracklet was used on two tracks")
+               }
+               
+          }
+          tracklets_used_multiple_times(track_data)
+          
+          ## Does the distance (normalized by time) between tracklets exceed 30?
           stitched_distance_test = function(u_track_data, max_stitch_distance) {
                
                distance_list = vector(mode='list', length=length(u_track_data))
@@ -459,7 +470,9 @@
                
           }
           stitched_distance_test(track_data, 30)
-               
+          
+          
+          
           
           
           
