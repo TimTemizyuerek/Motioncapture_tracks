@@ -396,50 +396,76 @@
      ## testing ####
           
           ## Are there overlapping time frame values in the tracks?
-          if ((sum(sapply(track_data, function(x) length(unique(x[,"frame_number"])) == nrow(x))) != length(track_data)) == FALSE) {
-               print("TEST PASSED: There are no overlapping time frame values")
-          } else {
-               print("TEST FAILED: There are overlapping time frame values")
+          overlapping_time_test = function(u_track_data){
                
+               if ((sum(sapply(u_track_data, function(x) length(unique(x[,"frame_number"])) == nrow(x))) != length(track_data)) == FALSE) {
+                    print("TEST PASSED: There are no overlapping time frame values")
+               } else {
+                    print("TEST FAILED: There are overlapping time frame values")
+                    
+               }
           }
-          
-          ## Does distance (time/space) between tracklets exceed max search window size?
+          overlapping_time_test(track_data)
           
           ## What is the distance (normalized by time) between tracklets, is it realistic?
-          distance_list = vector(mode='list', length=length(track_data))
-          for (n in 1:length(track_data)) {
+          stitched_distance_test = function(u_track_data, max_stitch_distance) {
                
-               ## run through IDs
-               runner_track = track_data[[n]]
-               
-               ## find first instance of tracklet
-               first_vec = vector()
-               for (m in unique(runner_track[,"ID"])) first_vec = c(first_vec, head(which(runner_track[,"ID"] == m),1))
-               
-               ## find last instance of tracklet
-               last_vec = vector()
-               for (k in unique(runner_track[,"ID"])) last_vec = c(last_vec, tail(which(runner_track[,"ID"] == k),1))
+               distance_list = vector(mode='list', length=length(u_track_data))
+               for (n in 1:length(u_track_data)) {
+                    
+                    ## run through IDs
+                    runner_track = u_track_data[[n]]
+                    
+                    ## find first instance of tracklet
+                    first_vec = vector()
+                    for (m in unique(runner_track[,"ID"])) first_vec = c(first_vec, head(which(runner_track[,"ID"] == m),1))
+                    
+                    ## find last instance of tracklet
+                    last_vec = vector()
+                    for (k in unique(runner_track[,"ID"])) last_vec = c(last_vec, tail(which(runner_track[,"ID"] == k),1))
+                    
+                    ## calculate distance between last and first
+                    distance_vec = vector()
+                    for (o in 1:length(last_vec)) {
+                         
+                         ## end of track; start of track
+                         runner_end = runner_track[last_vec[o],,drop=FALSE]; runner_start = runner_track[first_vec[o+1],,drop=FALSE]
+                         
+                         ## calculate distance: sqrt((x1-x2)^2+(y1-y2)^2)
+                         raw_distance = round( sqrt((as.numeric(runner_start[,"X"])-as.numeric(runner_end[,"X"]))^2+(as.numeric(runner_start[,"Y"])-as.numeric(runner_end[,"Y"]))^2) ,3)
+                         
+                         ## calculate difference in time
+                         time_dif = as.numeric(runner_start[,"frame_number"] - runner_end[,"frame_number"])
+                         
+                         ## normalize by time
+                         distance_vec[o] = round(raw_distance/time_dif,3)
+                    }
+                    
+                    ## collect distances in list
+                    distance_list[[n]] = distance_vec
+               }
           
-               ## calculate distance between last and first
-               distance_vec = vector()
-               for (o in 1:length(last_vec)) {
-                    
-                    ## end of track; start of track
-                    runner_end = runner_track[last_vec[o],,drop=FALSE]; runner_start = runner_track[first_vec[o+1],,drop=FALSE]
-                    
-                    ## calculate distance: sqrt((x1-x2)^2+(y1-y2)^2)
-                    raw_distance = round( sqrt((as.numeric(runner_start[,"X"])-as.numeric(runner_end[,"X"]))^2+(as.numeric(runner_start[,"Y"])-as.numeric(runner_end[,"Y"]))^2) ,3)
-                    
-                    ## calculate difference in time
-                    time_dif = as.numeric(runner_start[,"frame_number"] - runner_end[,"frame_number"])
-                    
-                    ## normalize by time
-                    distance_vec[o] = round(raw_distance/time_dif,3)
+               ## which tracks exceed the max_stitch_distance?
+               flagged_tracks = lapply(distance_list, function(x) max(x, na.rm = TRUE) >= max_stitch_distance)
+               flagged_tracks = which(flagged_tracks == TRUE)
+               
+               ## output
+               if (length(flagged_tracks) == 0){
+                    print(paste("TEST PASSED: no distance between stitched tracklets exceeds ",max_stitch_distance,"mm per time unit", sep=""))
+               } else {
+                    print(paste("TEST FAILED: these tracks", paste(flagged_tracks,collapse = ","), " exceed the distance of ",
+                                max_stitch_distance, "mm per time unit between stitched tracklets. Check stitching paramters"))
                }
                
-               ## collect distances in list
-               distance_list[[n]] = distance_vec
           }
+          stitched_distance_test(track_data, 30)
+               
+          
+          
+          
+          
+          
+          
           plot(1:length(sort(unlist(distance_list))), sort(unlist(distance_list)),
                ylab="distance/time between tracklets in track"); abline(h=10)
           
