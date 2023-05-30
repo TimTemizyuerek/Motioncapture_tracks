@@ -418,6 +418,22 @@
           }
           tracklets_used_multiple_times_test(track_data)
           
+          ## Any tracklets fell through the stitching process?
+          unstitched_tracklets_test = function(u_track_data, u_raw_data){
+               
+               ## tracklets from tracks and raw data
+               from_tracks = length(unlist(lapply(u_track_data, function(x) unique(x[,"ID"]))))
+               from_fulldata = length(unique(u_raw_data[,"ID"]))
+               
+               if (length(from_tracks) == length(from_fulldata)){
+                    print("TEST PASSED: all tracklets have been used in the stitching process")
+               } else {
+                    print("TEST FAILED: the number of tracklets in raw data does not match the number of tracklets post stitching")
+               }
+               
+          }
+          unstitched_tracklets_test(track_data, concise_data)
+          
           ## Does the distance (normalized by time) between tracklets exceed 30?
           stitched_distance_test = function(u_track_data, max_stitch_distance) {
                
@@ -471,21 +487,7 @@
           }
           stitched_distance_test(track_data, 30)
           
-          ## Any tracklets fell through stitching process?
-          unstitched_tracklets_test = function(u_track_data, u_raw_data){
-               
-               ## tracklets from tracks and raw data
-               from_tracks = length(unlist(lapply(u_track_data, function(x) unique(x[,"ID"]))))
-               from_fulldata = length(unique(u_raw_data[,"ID"]))
-               
-               if (length(from_tracks) == length(from_fulldata)){
-                    print("TEST PASSED: all tracklets have been used in the stitching process")
-               } else {
-                    print("TEST FAILED: the number of tracklets in raw data does not match the number of tracklets post stitching")
-               }
-               
-          }
-          unstitched_tracklets_test(track_data, concise_data)
+          
           
           
           
