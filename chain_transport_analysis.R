@@ -264,7 +264,7 @@
           return(track_list)
      }
      
-     ## comuptes window based on paramters
+     ## computes window based on parameters
      ## produces: dataframe with all window sizes
      windows_from_parameter = function(time_start, time_steps, x_start, x_steps, y_start, y_steps, iterations) {
           
@@ -286,7 +286,31 @@
           
      }
      
-     
+     ## computes distances between datapoins, within tracklets
+     ## produces: adds a distance column to u_data
+     distance.calculator = function (u_data) {
+          
+          ## add distance col
+          u_data = cbind(u_data, rep(NA, nrow(u_data)))
+          colnames(u_data)[7] = "distance"
+                                     
+          ## calculate all distances
+          for (n in 1:(nrow(u_data)-1)) {
+          
+               ## calculate distance
+               u_data[n,"distance"] = round( sqrt((as.numeric(u_data[n,"X"])-as.numeric(u_data[n+1,"X"]))^2+(as.numeric(u_data[n,"Y"])-as.numeric(u_data[n+1,"Y"]))^2),3)
+          
+               ## timer
+               print(round(n/nrow(u_data),4))
+          }
+          
+          ## remove distances calculated between tracklets
+          u_data[which(diff(u_data[,"ID"]) != 0),"distance"] = NA
+          
+          ## return dataframe
+          return(u_data)
+          
+     }
      
      
      
@@ -329,7 +353,7 @@
           ## output
           return(u_data)
      }
-          ## adds a distance col to the provided u_data (in pretty_format)
+          ## adds a distance col to the provided u_data (in concise_format)
      
      ## takes a track and identifies waiting times
      wait.calculator = function(u_data, time_between_tracklets, minimum_total_duration) {
@@ -356,20 +380,21 @@
           ## produces a vector containing the length of each waiting time
      
 ## 1. DATA PREPARATION (LOADING, TRANSFORMATION, STITCHING) ####
-     ## load raw data and transform to manageable format (output as .txt) ~ 11 minutes ####
+     ## load raw data and transform to manageable format (output as .txt) ~ 16 minutes ####
           
           ## read raw data, and format to easy-to-use-matrix
           raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           raw_concise_data = m.concise.dataframe(raw_data)
           
-          ## remove original dataframe to free up space
-          rm(raw_data)
+          ## calculate distances 
+          concise_data = distance.calculator(concise_data)
           
           ## export new dataframe to txt
           write.table(raw_concise_data, file=paste(dir_data,"concise_data.txt", sep=""), sep="\t")
           
-          ## remove concise dataframe to free up space
+          ## remove objects to free up space
           rm(raw_concise_data)
+          rm(raw_data)
           
      ## extract first and last datapoint for each tracklet ~ 12 minutes ####
           
@@ -393,18 +418,6 @@
           
           ## list for track_IDs
           track_ID = vector(mode='list', length=length(unique(stitching_data_last[,"ID"])))
-          
-          kek = parameter_evaluation(time_start = 1, 
-                                     time_step = 0.4,
-                                     x_start = 1,
-                                     x_step = 0.3,
-                                     y_start = 1,
-                                     y_steps = 0.3,
-                                     iterations = 3000)
-                               
-          
-          
-          
           
           ## sequential stitching
           seq_results = sequential.fragment.stitcher(u_first = stitching_data_first,
