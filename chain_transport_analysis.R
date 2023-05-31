@@ -105,8 +105,7 @@
      fragment.stitcher = function (u_first, u_last, u_track_ID, u_time_window, u_x_diff, u_y_diff) {
        
           ## for testing
-          # u_first = fake_data_first; u_last = fake_data_last; u_track_ID = track_ID
-          # u_time_window = 1; u_x_diff = 2; u_y_diff = 2
+          # u_first = seq_results[[1]]; u_last = seq_results[[2]]; u_track_ID = seq_results[[3]]; u_time_window = 10; u_x_diff = 10; u_y_diff = 10
           
           ## variables for the while loop
           proceed = TRUE
@@ -396,7 +395,7 @@
           stitching_data_last = as.matrix(stitching_data_last); rownames(stitching_data_last) = NULL
           
           ## list for track_IDs
-          track_ID = vector(mode='list', length=length(unique(stitching_data_last[,"ID"])))
+          track_ID = vector(mode='list', length=max(unique(stitching_data_last[,"ID"])))
           
           ## sequential stitching
           seq_results = sequential.fragment.stitcher(u_first = stitching_data_first,
@@ -409,6 +408,7 @@
                                                      u_y_diff_start = 1,
                                                      u_y_diff_steps = 0.3,
                                                      iterations = 3000)
+          
           
           ## extract tracks
           track_list = track.extractor(u_track_ID = seq_results[[3]])
@@ -509,7 +509,7 @@
                }
                
           }
-          stitched_distance_test(track_data, 50)
+          stitched_distance_test(track_data, 30)
           
           plot(track_data[[1]][15:20,"X"], track_data[[1]][15:20,"Y"], pch=16, col=track_data[[1]][15:20,"ID"])
           lines(track_data[[1]][15:20,"X"], track_data[[1]][15:20,"Y"], pch=16, col=track_data[[1]][15:20,"ID"])
@@ -746,11 +746,20 @@
      legend("topleft", inset=0.02, legend=c("startpoint", "endpoint"), pch=16,
             col = c("dodgerblue", "darkgoldenrod"))
      
-     kek = fragment.stitcher(u_first = subset_first, u_last = subset_last,
-                             u_time_window = 1, u_x_diff = 1, u_y_diff = 1)
+     ## list for track_IDs
+     track_ID = vector(mode='list', length=length(unique(fake_data_last[,"ID"])))
      
-     
-     
+     kek = sequential.fragment.stitcher(u_first = fake_data_first,
+                                        u_last = fake_data_last,
+                                        u_track_ID = track_ID,
+                                        u_time_window_start = 1,
+                                        u_time_window_steps = 0.3,
+                                        u_x_diff_start = 1,
+                                        u_x_diff_steps = 0.4,
+                                        u_y_diff_start = 1,
+                                        u_y_diff_steps = 0.4,
+                                        iterations = 10)
+                         
      
      ## old test data ####
      
