@@ -315,45 +315,9 @@
      
      
      
-     ## calculates step size between two datapoints
-     distance.calculator = function(u_data) {
-          
-          ## full distance vector
-          distance_vector = rep(NA, nrow(u_data))
-          
-          for (n in 1:length(unique(u_data[,"ID"]))) {
-               
-               ## subset the data by ID
-               runner_subset = u_data[which(u_data[,"ID"] == unique(u_data[,"ID"])[n]),]
-               
-               ## calculate distance
-               
-               ## vector to store distance
-               runner_vector = rep(NA, nrow(runner_subset))
-               
-               ## makes the calculations
-               for (m in 1:(nrow(runner_subset)-1)){
-                    
-                    ## get coordinates
-                    x1 = as.numeric(runner_subset[m,"X"]);   y1 = as.numeric(runner_subset[m,"Y"])
-                    x2 = as.numeric(runner_subset[m+1,"X"]); y2 = as.numeric(runner_subset[m+1,"Y"])
-                    
-                    ## calculate distance
-                    runner_vector[m] = round( sqrt((x1-x2)^2+(y1-y2)^2) ,3)
-                    
-               }
-               
-               ## add to final vector
-               distance_vector[which(u_data[,"ID"] == unique(u_data[,"ID"])[n])] = runner_vector
-          }
-          
-          ## append and rename col
-          u_data = cbind(u_data, distance_vector); colnames(u_data)[7] = "distance"
-          
-          ## output
-          return(u_data)
-     }
-          ## adds a distance col to the provided u_data (in concise_format)
+     
+     
+     
      
      ## takes a track and identifies waiting times
      wait.calculator = function(u_data, time_between_tracklets, minimum_total_duration) {
@@ -387,7 +351,22 @@
           raw_concise_data = m.concise.dataframe(raw_data)
           
           ## calculate distances 
-          concise_data = distance.calculator(concise_data)
+          raw_concise_data = distance.calculator(raw_concise_data)
+          
+          ## remove tracklets with funky Z values
+          ## use Z values of the trail outline + 10 cm buffer
+          raw_trail_outline_data = read.table(file = paste(dir_data, "Trail_outline.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
+          clean_trail_data = m.concise.dataframe(raw_trail_outline_data); clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]
+          clean_trail_data = clean_trail_data[-78,]; library("scatterplot3d"); scatterplot3d(clean_trail_data[,"X"], clean_trail_data[,"Y"], clean_trail_data[,"Z"])
+          
+          ## generate cutoff values
+          low_cutoff_z = min(clean_trail_data[,"Z"]) - 100; high_cutoff_z = max(clean_trail_data[,"Z"]) + 100
+          
+          ## extract affected IDs
+          IDs_to_remove_because_z = unique(raw_concise_data[which(raw_concise_data[,"Z"] <= low_cutoff_z | raw_concise_data[,"Z"] >= high_cutoff_z),][,"ID"])
+          
+          ## remove affected IDs
+          raw_concise_data = raw_concise_data[-which(raw_concise_data[,"ID"] %in% IDs_to_remove_because_z),]
           
           ## export new dataframe to txt
           write.table(raw_concise_data, file=paste(dir_data,"concise_data.txt", sep=""), sep="\t")
