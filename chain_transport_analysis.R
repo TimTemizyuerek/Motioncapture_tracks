@@ -264,7 +264,27 @@
           return(track_list)
      }
      
-     
+     ## comuptes window based on paramters
+     ## produces: dataframe with all window sizes
+     windows_from_parameter = function(time_start, time_steps, x_start, x_steps, y_start, y_steps, iterations) {
+          
+          ## create dataframe to store windows
+          window_df = data.frame(matrix(ncol = 4, nrow = iterations))
+          colnames(window_df) <- c("time", "x","y","iteration")
+          
+          ## calculate window in all iterations
+          for (n in 1:iterations) {
+               
+               ## calculate window
+               window_df[n,"time"] = time_start + (time_steps*(n-1))
+               window_df[n,"x"] = x_start + (x_steps*(n-1))
+               window_df[n,"y"] = y_start + (y_steps*(n-1))
+               window_df[n,"iteration"] = n
+          }
+          
+          return(window_df)
+          
+     }
      
      
      
@@ -373,6 +393,18 @@
           
           ## list for track_IDs
           track_ID = vector(mode='list', length=length(unique(stitching_data_last[,"ID"])))
+          
+          kek = parameter_evaluation(time_start = 1, 
+                                     time_step = 0.4,
+                                     x_start = 1,
+                                     x_step = 0.3,
+                                     y_start = 1,
+                                     y_steps = 0.3,
+                                     iterations = 3000)
+                               
+          
+          
+          
           
           ## sequential stitching
           seq_results = sequential.fragment.stitcher(u_first = stitching_data_first,
