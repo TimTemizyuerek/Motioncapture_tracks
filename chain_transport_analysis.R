@@ -183,7 +183,7 @@
                     ## update parameters
                     time_window = u_time_window_start + (n*u_time_window_steps) 
                     x_diff = u_x_diff_start + (n*u_x_diff_steps) 
-                    y_diff = u_y_diff_start + (n*u_y_diff_steps) 
+                    y_diff = u_y_diff_start + (n*u_y_diff_steps)
                     
                     ## rerun function
                     runner_data = fragment.stitcher(runner_data[[1]], runner_data[[2]], runner_data[[3]], time_window, x_diff, y_diff)
@@ -315,11 +315,23 @@
      
      
      
-     
-     
-     
      ## takes a track and identifies waiting times
-     wait.calculator = function(u_data, time_between_tracklets, minimum_total_duration) {
+     wait.calculator = function(u_track_data, time_between_tracklets, minimum_total_duration) {
+          
+          ## waiting times list
+          waiting_times = vector(mode='list', length=length(u_track_data))
+          
+          for (n in 1:length(u_track_data))
+               
+               ## run through tracks
+               runner_track = u_track_data[[n]]
+          
+               
+          
+          
+          
+          
+          
           
           ## find places where distances don't go above 1.5 (which is measurement error)
           runner_stationary = u_data[which(u_data[,"distance"] <= 1.5),,drop=FALSE]
@@ -402,12 +414,12 @@
                                                      u_last = stitching_data_last,
                                                      u_track_ID = track_ID,
                                                      u_time_window_start = 1,
-                                                     u_time_window_steps = 0.4,
+                                                     u_time_window_steps = 0.1,
                                                      u_x_diff_start = 1,
-                                                     u_x_diff_steps = 0.3,
+                                                     u_x_diff_steps = 0.1,
                                                      u_y_diff_start = 1,
-                                                     u_y_diff_steps = 0.3,
-                                                     iterations = 3000)
+                                                     u_y_diff_steps = 0.1,
+                                                     iterations = 5000)
           
           
           ## extract tracks
@@ -416,6 +428,9 @@
           ## assemble full track data
           ## concise_data = read.table(paste(dir_data,"concise_data.txt", sep=""));concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           track_data = track.data(u_track_ID = track_list, u_data = concise_data)
+          
+          ## calculate distances
+          track_data_dist = lapply(track_data, function(x) distance.calculator(x))
           
      ## testing ####
           
@@ -510,24 +525,6 @@
                
           }
           stitched_distance_test(track_data, 30)
-          
-          
-          
-          
-          plot(track_data[[1]][15:20,"X"], track_data[[1]][15:20,"Y"], pch=16, col=track_data[[1]][15:20,"ID"])
-          lines(track_data[[1]][15:20,"X"], track_data[[1]][15:20,"Y"], pch=16, col=track_data[[1]][15:20,"ID"])
-          
-          
-          
-          
-          
-          
-          
-          plot(1:length(sort(unlist(distance_list))), sort(unlist(distance_list)),
-               ylab="distance/time between tracklets in track"); abline(h=10)
-          
-          ## this is a problem yay...
-          
           
           ## plot tracks
           for (n in 1:length(track_data)) {
