@@ -511,6 +511,9 @@
           }
           stitched_distance_test(track_data, 30)
           
+          
+          
+          
           plot(track_data[[1]][15:20,"X"], track_data[[1]][15:20,"Y"], pch=16, col=track_data[[1]][15:20,"ID"])
           lines(track_data[[1]][15:20,"X"], track_data[[1]][15:20,"Y"], pch=16, col=track_data[[1]][15:20,"ID"])
           
