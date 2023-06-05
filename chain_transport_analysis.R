@@ -242,7 +242,8 @@
      track.data = function (u_track_ID, u_data) {
           
           ## add ID_track to df
-          u_data = cbind(u_data, rep(NA, nrow(u_data))); colnames(u_data)[7] = "ID_track"
+          u_data = cbind(u_data, rep(NA, nrow(u_data)))
+          colnames(u_data)[ncol(u_data)] = "ID_track"
           
           ## output list for dataframes containing track data
           track_list = vector(mode='list', length=length(u_track_ID))
@@ -291,7 +292,7 @@
           
           ## add distance col
           u_data = cbind(u_data, rep(NA, nrow(u_data)))
-          colnames(u_data)[7] = "distance"
+          colnames(u_data)[ncol(u_data)] = "distance"
                                      
           ## calculate all distances
           for (n in 1:(nrow(u_data)-1)) {
@@ -364,21 +365,28 @@
           ## calculate distances 
           raw_concise_data = distance.calculator(raw_concise_data)
           
-          ## remove tracklets with funky Z values
-          ## use Z values of the trail outline + 10 cm buffer
-          raw_trail_outline_data = read.table(file = paste(dir_data, "Trail_outline.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
-          clean_trail_data = m.concise.dataframe(raw_trail_outline_data); clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]
-          clean_trail_data = clean_trail_data[-78,]; library("scatterplot3d"); scatterplot3d(clean_trail_data[,"X"], clean_trail_data[,"Y"], clean_trail_data[,"Z"])
-          
-          ## generate cutoff values
-          low_cutoff_z = min(clean_trail_data[,"Z"]) - 100; high_cutoff_z = max(clean_trail_data[,"Z"]) + 100
-          
-          ## extract affected IDs
-          IDs_to_remove_because_z = unique(raw_concise_data[which(raw_concise_data[,"Z"] <= low_cutoff_z | raw_concise_data[,"Z"] >= high_cutoff_z),][,"ID"])
-          
-          ## remove affected IDs
-          raw_concise_data = raw_concise_data[-which(raw_concise_data[,"ID"] %in% IDs_to_remove_because_z),]
-          
+          ## remove tracklets with too high/low Z values
+               ## use Z values of the trail outline + 10 cm buffer
+               raw_trail_outline_data = read.table(file = paste(dir_data, "Trail_outline.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
+               clean_trail_data = m.concise.dataframe(raw_trail_outline_data); clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]
+               clean_trail_data = clean_trail_data[-78,]; scatterplot3d::scatterplot3d(clean_trail_data[,"X"], clean_trail_data[,"Y"], clean_trail_data[,"Z"])
+               ## generate cutoff values
+               low_cutoff_z = min(clean_trail_data[,"Z"]) - 100; high_cutoff_z = max(clean_trail_data[,"Z"]) + 100
+               ## extract affected IDs
+               IDs_to_remove_because_z = unique(raw_concise_data[which(raw_concise_data[,"Z"] <= low_cutoff_z | raw_concise_data[,"Z"] >= high_cutoff_z),][,"ID"])
+               ## remove affected IDs
+               raw_concise_data = raw_concise_data[-which(raw_concise_data[,"ID"] %in% IDs_to_remove_because_z),]
+               
+          ## remove tracklets with big jumps in Z values
+               ## calculate differences
+               z_distances = diff(raw_concise_data[,"Z"])
+               ## remove differences between different tracklets
+               z_distances[which(diff(raw_concise_data[,"ID"]) != 0)] = NA
+               ## identify tracklets with jumps of more than 5cm
+               IDs_to_remove_because_of_z_diff = raw_concise_data[which(z_distances >= 50),"ID"]
+               ## remove them
+               raw_concise_data = raw_concise_data[-which(raw_concise_data[,"ID"] %in% IDs_to_remove_because_of_z_diff),]
+               
           ## export new dataframe to txt
           write.table(raw_concise_data, file=paste(dir_data,"concise_data.txt", sep=""), sep="\t")
           
@@ -389,7 +397,7 @@
      ## extract first and last datapoint for each tracklet ~ 12 minutes ####
           
           ## load data and make matrix
-          concise_data = read.table(paste(dir_data,"concise_data.txt", sep=""));concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
+          concise_data = read.table(paste(dir_data,"concise_data.txt", sep="")); concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           
           ## extract first and last item from each tracklet
           first_last_list = first.last.finder(concise_data)
@@ -428,9 +436,6 @@
           ## assemble full track data
           ## concise_data = read.table(paste(dir_data,"concise_data.txt", sep=""));concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           track_data = track.data(u_track_ID = track_list, u_data = concise_data)
-          
-          ## calculate distances
-          track_data_dist = lapply(track_data, function(x) distance.calculator(x))
           
      ## testing ####
           
