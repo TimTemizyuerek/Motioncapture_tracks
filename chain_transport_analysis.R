@@ -383,6 +383,27 @@
           rm(raw_concise_data)
           rm(raw_data)
           
+          ## identify camera fov
+          # ## plot trail outline
+          # plot(clean_trail_data[,"X"], clean_trail_data[,"Y"])
+          # ## 4th camera     
+          # points(clean_trail_data[c(3,14,46,58),"X"],clean_trail_data[c(3,14,46,58),"Y"], pch=21, bg="blue")
+          # ## 3rd camera
+          # points(clean_trail_data[c(25,49,71,79),"X"],clean_trail_data[c(25,49,71,79),"Y"], pch=21, bg="blue")
+          # ## 2nd camera
+          # points(clean_trail_data[c(27,32,35,59),"X"],clean_trail_data[c(27,32,35,59),"Y"], pch=21, bg="blue")
+          # ## 1st camera
+          # points(clean_trail_data[c(29,33,40,64),"X"],clean_trail_data[c(29,33,40,64),"Y"], pch=21, bg="blue")
+          
+          ## save camera fov in matrix
+          camera_fov = matrix(NA, nrow = 16, ncol=4); colnames(camera_fov) = c("X", "Y", "ID", "pos")
+          camera_fov[,"ID"] = sort(rep(1:4,4)); camera_fov[,"pos"] = rep(1:4,4)
+          camera_fov[,"X"] = c(clean_trail_data[c(64,29,33,40, 35,59,27,32, 49,71,25,79, 14,3,58,46),"X"])
+          camera_fov[,"Y"] = c(clean_trail_data[c(64,29,33,40, 35,59,27,32, 49,71,25,79, 14,3,58,46),"Y"])
+          
+          ## export matrix
+          write.table(camera_fov, file=paste(dir_github,"camera_fov.txt", sep=""), sep="\t")
+          
      ## extract first and last datapoint for each tracklet ~ 12 minutes ####
           
           ## load data and make matrix
