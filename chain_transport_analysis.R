@@ -404,6 +404,9 @@
           ## export matrix
           write.table(camera_fov, file=paste(dir_github,"camera_fov.txt", sep=""), sep="\t")
           
+          ## remove object
+          rm(camera_fov)
+          
      ## extract first and last datapoint for each tracklet ~ 12 minutes ####
           
           ## load data and make matrix
@@ -563,8 +566,15 @@
 ## 2. DATA ANALYSIS (WAITING TIMES) ####
      ## extract details for video matching
           
-          ## which track travels under which camera?
+          ## load camera_fov
+          camera_fov = read.table(file = paste(dir_github, "camera_fov.txt", sep=""), sep = '\t')
           
+          ## create fovs 
+          
+          camera_fov[which(camera_fov[,"ID"] == 1),]
+          
+          ## which track travels under which camera?
+          camera_fov
           
           
           
