@@ -312,48 +312,37 @@
           
      }
      
-     
-     
-     
-     
      ## takes a track and identifies waiting times
-     wait.calculator = function(u_track_data, time_between_tracklets, minimum_total_duration) {
+     ## produce: list matching track_data with waiting times
+     wait.calculator = function(u_track_data, u_min_waiting_time) {
           
           ## waiting times list
           waiting_times = vector(mode='list', length=length(u_track_data))
           
-          for (n in 1:length(u_track_data))
+          for (n in 1:length(u_track_data)){
                
                ## run through tracks
                runner_track = u_track_data[[n]]
           
+               ## find places where distances don't go above 1.5 (which is measurement error)
+               runner_stationary = runner_track[which(runner_track[,"distance"] <= 1.5),,drop=FALSE]
                
-          
-          
-          
-          
-          
-          
-          ## find places where distances don't go above 1.5 (which is measurement error)
-          runner_stationary = u_data[which(u_data[,"distance"] <= 1.5),,drop=FALSE]
-          
-          ## calculate distance between time_in_deciseconds
-          runner_time_diff = diff(runner_stationary[,"time_in_deciseconds"])
-          
-          ## find time differences (i.e. waiting events that stretch across tracklets - allow 1 second)
-          runner_cut_off = which(runner_time_diff >= time_between_tracklets)
-          
-          ## find wait lengths
-          runner_cut_off_lenghts = diff(runner_cut_off)
-          
-          ## only take waiting events that are longer than 1 second
-          runner_output = runner_cut_off_lenghts[which(runner_cut_off_lenghts > minimum_total_duration)]
-          
+               ## identify breaks in stationary phases
+               runner_breaks = which(diff(runner_stationary[,"frame_number"]) > 1)
+               
+               ## find lengths of waiting times
+               runner_waiting_times = diff(runner_breaks)
+               
+               ## remove short waiting times and put in return list
+               waiting_times[[n]] = runner_waiting_times[which(runner_waiting_times >= u_min_waiting_time)]
+               
+          }
+           
           ## output
-          return(runner_output)
+          return(waiting_times)
           
      }
-          ## produces a vector containing the length of each waiting time
+          
      
 ## 1. DATA PREPARATION (LOADING, TRANSFORMATION, STITCHING) ####
      ## load raw data and transform to manageable format (output as .txt) ~ 16 minutes ####
@@ -529,7 +518,10 @@
                }
                
           }
-          stitched_distance_test(track_data, 30)
+          stitched_distance_test(track_data, 50)
+          
+          ## how long are the tracks
+          plot(1:length(unlist(lapply(track_data, nrow))), sort(unlist(lapply(track_data, nrow))))
           
           ## plot tracks
           for (n in 1:length(track_data)) {
@@ -548,95 +540,21 @@
           }
           
 ## 2. DATA ANALYSIS (WAITING TIMES) ####
+     ## extract details for video matching
+          
+          ## which track travels under which camera?
+          
+          
+          
+          
+          
      ## calculate waiting times #### 
      
-     kek = track_distance_data[[29]]
+          ## calculate waiting times, at least one min
+          track_distance_data = wait.calculator(track_data, 600)
           
-     plotter = kek[4100:4200,]
-     
-     plot(1:nrow(plotter), plotter[,"time_in_deciseconds"])
-     
-  ## calculate waiting times
-     
-     ## calculate step distance for all tracks
-     track_distance_data = lapply(track_data, function(x) distance.calculator(x))
-     
-     ## calculate waiting times
-     wait_durations = lapply(track_distance_data, function(x) wait.calculator(x, time_between_tracklets = 1, minimum_total_duration = 1))
-     
-     ## plot quick-and-dirty hist
-     in_seconds = as.vector(unlist(wait_durations))/10
-     
-     hist(log(in_seconds), breaks=35,
-          xlab="log duration of stationary events in seconds (combined for all tracks)",
-          main="Over 2.5 hours of recording (from pilot on 04.10.2022)")
-     abline(v=log(1)); text(x=log(1)+0.2, y=1400, labels="1s")
-     abline(v=log(2)); text(x=log(2)+0.2, y=1400, labels="2s")
-     abline(v=log(10)); text(x=log(10)+0.2, y=1400, labels="10s")
-     abline(v=log(60)); text(x=log(60)+0.2, y=1400, labels="1m")
-     abline(v=log(600)); text(x=log(600)+0.2, y=1400, labels="10m")
-     abline(v=log(3600)); text(x=log(3600)+0.2, y=1400, labels="1h")
-     
-     ## stopper
-     ## plot candidates ####
-     
-     for (n in seq_along(track_data)) {
-          
-          if (nrow(track_data[[n]]) >= 1000 ){
-          
-               ## create file for export
-               png(filename=paste(n,".png", sep=""))
-               
-               ## create plot
-               plot(track_data[[n]][,"X"], track_data[[n]][,"Y"],
-                    col=track_data[[n]][,"ID"],
-                    xlim=c(-3800,4600), ylim=c(-2200, 8300),
-                    main=paste("Made from ",length(unique(track_data[[n]][,"ID"]))," tracklets", sep=""))
-               
-               ## close graphic device
-               dev.off()
-               
-          }
-          
-     }
-          
-          
-          
-     
-     
-     
-     
-     ## plot track ends to see blind spots of the cameras ####
-     
-     par(mfrow=c(1,2))
-     
-     plot(stitching_data_first[,"X"], stitching_data_first[,"Y"],
-          xlim=c(-3800,4600), ylim=c(-2200, 8300), pch=16, cex=0.5,
-          col=scales::alpha("blue", 0.1),
-          xlab="X", ylab="Y", main="Tracklet startpoints"
-     )
-     
-     plot(jitter(stitching_data_first[,"X"],100), jitter(stitching_data_first[,"Y"],100),
-          xlim=c(-3800,4600), ylim=c(-2200, 8300), pch=16, cex=0.5,
-          col=scales::alpha("blue", 0.1),
-          xlab="X", ylab="Y", main="Tracklet startpoints (drawn with jitter)"
-     )
-     
-     par(mfrow=c(1,2))
-     
-     plot(stitching_data_last[,"X"], stitching_data_last[,"Y"],
-          xlim=c(-3800,4600), ylim=c(-2200, 8300), pch=16, cex=0.5,
-          col=scales::alpha("black", 0.1),
-          xlab="X", ylab="Y", main="Tracklet endpoints"
-          )
-     
-     plot(jitter(stitching_data_last[,"X"],100), jitter(stitching_data_last[,"Y"],100),
-          xlim=c(-3800,4600), ylim=c(-2200, 8300), pch=16, cex=0.5,
-          col=scales::alpha("black", 0.1),
-          xlab="X", ylab="Y", main="Tracklet endpoints (drawn with jitter)"
-     )
-     
-     ## stopper
+          ## plot quick-and-dirty hist
+          hist(unlist(track_distance_data), breaks= 50)
      
 ## 3. Video data ####
      ## load and handle data ####
