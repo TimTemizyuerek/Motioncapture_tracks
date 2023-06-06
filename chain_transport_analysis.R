@@ -1045,44 +1045,25 @@
           raw_trail_outline_data = read.table(file = paste("C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/ARCHIVE/", "Trail_outline.tsv", sep=""), 
                                               sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
           
-          
-          
           ## transform to concise format
           clean_trail_data = m.concise.dataframe(raw_trail_outline_data)
           clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]
-          clean_trail_data[,"X"] = clean_trail_data[,"X"]/10
-          clean_trail_data[,"Y"] = clean_trail_data[,"Y"]/10
-          clean_trail_data[,"Z"] = clean_trail_data[,"Z"]/10
-          
           
           ## plot trail outline
           plot(clean_trail_data[,"X"], clean_trail_data[,"Y"])
+     
+          ## 4th camera     
+          points(clean_trail_data[c(3,14,46,58),"X"],clean_trail_data[c(3,14,46,58),"Y"], pch=21, bg="blue")
           
-          ## last camera frame
+          ## 3rd camera
+          points(clean_trail_data[c(25,49,71,80),"X"],clean_trail_data[c(25,49,71,80),"Y"], pch=21, bg="blue")
           
-          ## topleft
-          plot(clean_trail_data[which(clean_trail_data[,"ID"] == 46),, drop=FALSE][,"X"], clean_trail_data[which(clean_trail_data[,"ID"] == 46),, drop=FALSE][,"Y"],
-               xlim=c(-200,0),ylim=c(780,870),pch=16, cex=2,
-               xlab="X", ylab="Y")
+          ## 2nd camera
+          points(clean_trail_data[c(27,32,35,59),"X"],clean_trail_data[c(27,32,35,59),"Y"], pch=21, bg="blue")
           
-          ## bottomleft
-          points(clean_trail_data[which(clean_trail_data[,"ID"] == 3),, drop=FALSE][,"X"], clean_trail_data[which(clean_trail_data[,"ID"] == 3),, drop=FALSE][,"Y"],pch=16, cex=2)
+          ## 1st camera
+          points(clean_trail_data[c(29,33,40,64),"X"],clean_trail_data[c(29,33,40,64),"Y"], pch=21, bg="blue")
           
-          ## topright
-          points(clean_trail_data[which(clean_trail_data[,"ID"] == 58),, drop=FALSE][,"X"], clean_trail_data[which(clean_trail_data[,"ID"] == 58),, drop=FALSE][,"Y"],pch=16, cex=2)
-          
-          ## bottomright
-          points(clean_trail_data[which(clean_trail_data[,"ID"] == 14),, drop=FALSE][,"X"], clean_trail_data[which(clean_trail_data[,"ID"] == 14),, drop=FALSE][,"Y"],pch=16, cex=2)
-          
-          ## design grid 
-          for (n in seq(from=801, to=843, by=14)) abline(h=n)
-          for (n in seq(from=-38, to=-185, by=-14)) abline(v=n)
-          
-          length(seq(from=801, to=843, by=14))
-          length(seq(from=-38, to=-185, by=-14))
-          
-          
-          ## stopper
      ## fragment.stitcher tester ####
           
           
