@@ -447,7 +447,7 @@
           track_list = track.extractor(u_track_ID = seq_results[[3]])
           
           ## assemble full track data
-          ## concise_data = read.table(paste(dir_data,"concise_data.txt", sep=""));concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
+          concise_data = read.table(paste(dir_data,"concise_data.txt", sep=""));concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           track_data = track.data(u_track_ID = track_list, u_data = concise_data)
           
      ## testing ####
@@ -569,12 +569,69 @@
           ## load camera_fov
           camera_fov = read.table(file = paste(dir_github, "camera_fov.txt", sep=""), sep = '\t')
           
-          ## create fovs 
+          ## create fovs cutoffs
+          ## format low x, high x, low y, high y
+          camera_cutoff = vector(mode='list', length=4)
+          camera_cutoff[[1]] = c(1300, 2750, 1800, 2250)
+          camera_cutoff[[2]] = c(-1300, 100, -2350, -1900)
+          camera_cutoff[[3]] = c(3500, 4500, 4350, 5400)
+          camera_cutoff[[4]] = c(-1850, -400, 8020, 8410)
           
-          camera_fov[which(camera_fov[,"ID"] == 1),]
+          plot(camera_fov[1:4,"X"], camera_fov[1:4,"Y"])
           
-          ## which track travels under which camera?
-          camera_fov
+          
+          u_track_data = track_data; u_camera_cutoff = camera_cutoff
+          
+          under.camera = function(u_track_data, u_camera_cutoff) {
+               
+               ## output list
+               final_output = vector(mode='list', length=length(u_track_data)) 
+               
+               for (n in 1:length(u_track_data)) {
+               
+                    ## test for cameras
+                    camera_one = which(runner_track[,"X"] >= u_camera_cutoff[[1]][1] & runner_track[,"X"] <= u_camera_cutoff[[1]][2] &
+                                       runner_track[,"Y"] >= u_camera_cutoff[[1]][3] & runner_track[,"Y"] <= u_camera_cutoff[[1]][4])
+                    camera_two = which(runner_track[,"X"] >= u_camera_cutoff[[2]][1] & runner_track[,"X"] <= u_camera_cutoff[[2]][2] &
+                                       runner_track[,"Y"] >= u_camera_cutoff[[2]][3] & runner_track[,"Y"] <= u_camera_cutoff[[2]][4])
+                    camera_three = which(runner_track[,"X"] >= u_camera_cutoff[[3]][1] & runner_track[,"X"] <= u_camera_cutoff[[3]][2] &
+                                         runner_track[,"Y"] >= u_camera_cutoff[[3]][3] & runner_track[,"Y"] <= u_camera_cutoff[[3]][4])
+                    camera_four = which(runner_track[,"X"] >= u_camera_cutoff[[4]][1] & runner_track[,"X"] <= u_camera_cutoff[[4]][2] &
+                                        runner_track[,"Y"] >= u_camera_cutoff[[4]][3] & runner_track[,"Y"] <= u_camera_cutoff[[4]][4])
+                    
+                    ## extract times
+                    camera_one_mins = round(range(runner_track[camera_one,"time_in_deciseconds"])/600,2)
+                    camera_two_mins = round(range(runner_track[camera_two,"time_in_deciseconds"])/600,2)
+                    camera_three_mins = round(range(runner_track[camera_three,"time_in_deciseconds"])/600,2)
+                    camera_four_mins = round(range(runner_track[camera_four,"time_in_deciseconds"])/600,2)
+               
+                    ## output
+                    output = vector(mode='list', length=4)
+                    names(output) = c("cam1", "cam2", "cam3", "cam4")
+                    output[[1]] = camera_one_mins; output[[2]] = camera_two_mins; output[[3]] = camera_three_mins; output[[4]] = camera_four_mins;
+                    
+                    ## fill output list
+                    final_output[[n]] = output
+                    
+               }
+               
+               ## return output
+               return(final_output)
+          }
+          
+          
+          kek = under.camera(track_data, camera_cutoff)
+          
+          kek = lapply(u_track_data, function(x) under.camera(x, camera_cutoff))
+          
+          
+          plot(runner_track[,"X"], runner_track[,"Y"])
+          points(camera_fov[5:8,"X"], camera_fov[5:8,"Y"], pch=16, cex=1)
+          
+          abline(v=camera_cutoff[[2]][1]); abline(v=camera_cutoff[[2]][2])
+          abline(h=camera_cutoff[[2]][3]); abline(h=camera_cutoff[[2]][4])
+          
+          points(runner_track[camera_two,"X"], runner_track[camera_two,"Y"], col="red")
           
           
           
