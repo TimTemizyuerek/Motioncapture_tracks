@@ -577,17 +577,15 @@
           camera_cutoff[[3]] = c(3500, 4500, 4350, 5400)
           camera_cutoff[[4]] = c(-1850, -400, 8020, 8410)
           
-          plot(camera_fov[1:4,"X"], camera_fov[1:4,"Y"])
-          
-          
-          u_track_data = track_data; u_camera_cutoff = camera_cutoff
-          
+          ## checks if tracks are under camera, returns time spans in minutes
           under.camera = function(u_track_data, u_camera_cutoff) {
                
                ## output list
                final_output = vector(mode='list', length=length(u_track_data)) 
                
                for (n in 1:length(u_track_data)) {
+                    
+                    runner_track = u_track_data[[n]]
                
                     ## test for cameras
                     camera_one = which(runner_track[,"X"] >= u_camera_cutoff[[1]][1] & runner_track[,"X"] <= u_camera_cutoff[[1]][2] &
@@ -619,27 +617,25 @@
                return(final_output)
           }
           
+          ## run function
+          under_camera = under.camera(track_data, camera_cutoff)
           
-          kek = under.camera(track_data, camera_cutoff)
+          ## identify tracks that fall under camera
+          number_of_cameras_per_track = lapply(under_camera, function(x) (sum(is.infinite(unlist(x)) == FALSE)/2))
+          usable_tracks = which(number_of_cameras_per_track != 0)
           
-          kek = lapply(u_track_data, function(x) under.camera(x, camera_cutoff))
-          
-          
-          plot(runner_track[,"X"], runner_track[,"Y"])
-          points(camera_fov[5:8,"X"], camera_fov[5:8,"Y"], pch=16, cex=1)
-          
-          abline(v=camera_cutoff[[2]][1]); abline(v=camera_cutoff[[2]][2])
-          abline(h=camera_cutoff[[2]][3]); abline(h=camera_cutoff[[2]][4])
-          
-          points(runner_track[camera_two,"X"], runner_track[camera_two,"Y"], col="red")
-          
-          
-          
+          print(paste(round(length(usable_tracks)/length(track_data),2)*100,"% of tracks fall under at least one camera"), sep="")
           
      ## calculate waiting times #### 
      
+          ## filter for tracks that fall under camera
+          usable_track_data = track_data[usable_tracks]
+          
           ## calculate waiting times, at least one min
-          track_distance_data = wait.calculator(track_data, 600)
+          track_distance_data = wait.calculator(usable_track_data, 600)
+          
+          ## how many waiting events
+          length(unlist(track_distance_data))
           
           ## plot quick-and-dirty hist
           hist(unlist(track_distance_data), breaks= 50)
