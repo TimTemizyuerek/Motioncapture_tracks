@@ -337,7 +337,7 @@
                ## re-extract data
                candidates_data = lapply(split_candidates, function(x) runner_track[x,,drop=FALSE])
                
-               plot(candidates_data[[2]][,"X"], candidates_data[[2]][,"Y"])
+               plot(candidates_data[[1]][,"X"], candidates_data[[1]][,"Y"])
                
                
                
