@@ -324,11 +324,24 @@
                ## run through tracks
                runner_track = u_track_data[[n]]
           
-               ## find places where distances don't go above 1.5 (which is measurement error)
+               ## find places where distances don't go above 1 (which is measurement error)
                runner_stationary = runner_track[which(runner_track[,"distance"] <= 1.5),,drop=FALSE]
                
                ## identify breaks in stationary phases
-               runner_breaks = which(diff(runner_stationary[,"frame_number"]) > 1)
+               runner_breaks = which(diff(runner_stationary[,"frame_number"]) == 1)
+               
+               ## split potential waiting times & remove too short ones
+               split_candidates = split(runner_breaks, cumsum(c(1, diff(runner_breaks) != 1)))
+               split_candidates = split_candidates[which(lapply(split_candidates, length) >= u_min_waiting_time)]
+               
+               ## re-extract data
+               candidates_data = lapply(split_candidates, function(x) runner_track[x,,drop=FALSE])
+               
+               plot(candidates_data[[2]][,"X"], candidates_data[[2]][,"Y"])
+               
+               
+               
+               
                
                ## find lengths of waiting times
                runner_waiting_times = diff(runner_breaks)
@@ -548,23 +561,22 @@
           plot(1:length(unlist(lapply(track_data, nrow))), sort(unlist(lapply(track_data, nrow))))
           
           ## plot tracks
-          for (n in 1:length(track_data)) {
-          
-               runner_track = track_data[[n]]
-               palette(RColorBrewer::brewer.pal(12, "Set3"))
-               
-               ## create file for export
-               png(filename=paste("Track_",n,".png",sep=""))
-               
-               plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)     
-               
-               ## close graphic device
-               dev.off()
-               
-          }
+          # for (n in 1:length(track_data)) {
+          # 
+          #      runner_track = track_data[[n]]
+          #      palette(RColorBrewer::brewer.pal(12, "Set3"))
+          #      
+          #      ## create file for export
+          #      png(filename=paste("Track_",n,".png",sep=""))
+          #      
+          #      plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)     
+          #      
+          #      ## close graphic device
+          #      dev.off()
+          # }
           
 ## 2. DATA ANALYSIS (WAITING TIMES) ####
-     ## extract details for video matching
+     ## extract details for video matching ####
           
           ## load camera_fov
           camera_fov = read.table(file = paste(dir_github, "camera_fov.txt", sep=""), sep = '\t')
