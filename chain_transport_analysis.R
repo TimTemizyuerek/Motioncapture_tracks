@@ -639,7 +639,50 @@
           print(paste(round(length(usable_tracks)/length(track_data),2)*100,"% of tracks fall under at least one camera"), sep="")
           
      ## calculate waiting times #### 
-     
+          
+          
+          ## dummy vector
+          dummy = 1:200
+          
+          ## make indices cutting of the edges
+          u_index = dummy[5:(length(dummy)-5)]
+          
+          
+          
+          mean_distances_in_window = rep(NA, 5)
+          for (n in 1:5) mean_distances_in_window[n] = mean(diff(dummy[(u_index-n):(u_index+n)]))
+          mean(mean_distances_in_window)
+          
+          mean(diff(dummy[(u_index-2):(u_index+2)]))
+          mean(diff(dummy[(u_index-3):(u_index+3)]))
+          mean(diff(dummy[(u_index-4):(u_index+4)]))
+          mean(diff(dummy[(u_index-5):(u_index+5)]))
+          
+          
+          
+          
+          sliding.window = function(u_vector, u_index) {
+               
+               u_index = 5
+               
+               dummy[u_index]
+               
+               mean(dummy[(u_index[1]-5):(u_index[1]+5)])
+               
+          }
+          
+          
+          
+          
+          dummy[(u_index[1]-4):(u_index[1]+4)]
+          
+          
+          
+          unlist(lapply(dummy, function(x) is.numeric(x)))
+          
+          
+          
+          
           ## filter for tracks that fall under camera
           usable_track_data = track_data[usable_tracks]
           
