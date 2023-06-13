@@ -640,12 +640,46 @@
           
      ## calculate waiting times #### 
           
+
+          ## run through the tracks
+          runner_track = track_data[[n]]
           
-          ## dummy vector
-          dummy = 1:200
+          ## sliding window function
+          sliding.window = function(u_vector, u_window_length){
+               
+               ## vector to store window values in
+               mean_vector = rep(NA, nrow(runner_track))
+               
+               ## calculate window
+               for (n in 1:(length(u_vector)-u_window_length)) {
+                    
+                    ## calculate individual means / take the grand mean
+                    mean_distances_in_window = rep(NA, u_window_length)
+                    for (m in 1:u_window_length) mean_distances_in_window[m] = round(abs(mean(diff(u_vector[n:(n+m)]))),3)
+                    mean_vector[n] = mean(mean_distances_in_window)
+               
+               }
+               
+               plot(1:length(mean_vector), mean_vector)     
+                    
+                    ## calculate all distances
+                    abs(mean(diff(u_vector[(u_index-2):(u_index+2)]))); abs(mean(diff(u_vector[(u_index-3):(u_index+3)])))
+                    abs(mean(diff(u_vector[(u_index-4):(u_index+4)]))); abs(mean(diff(u_vector[(u_index-5):(u_index+5)])))
+                    
+                    
+                    
+                    
+               }
+               
+               
+               
+               
+          }
           
-          ## make indices cutting of the edges
-          u_index = dummy[5:(length(dummy)-5)]
+          
+          ## calculate distances in sliding window for distance col
+          lappply(runner_track[,"distance"], function(x))
+          
           
           
           
