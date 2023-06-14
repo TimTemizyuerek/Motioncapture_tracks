@@ -640,15 +640,11 @@
           
      ## calculate waiting times #### 
           
-
-          ## run through the tracks
-          runner_track = track_data[[n]]
-          
           ## sliding window function
           sliding.window = function(u_vector, u_window_length){
                
                ## vector to store window values in
-               mean_vector = rep(NA, nrow(runner_track))
+               window_vector = rep(NA, length(u_vector))
                
                ## calculate window
                for (n in 1:(length(u_vector)-u_window_length)) {
@@ -656,64 +652,31 @@
                     ## calculate individual means / take the grand mean
                     mean_distances_in_window = rep(NA, u_window_length)
                     for (m in 1:u_window_length) mean_distances_in_window[m] = round(abs(mean(diff(u_vector[n:(n+m)]))),3)
-                    mean_vector[n] = mean(mean_distances_in_window)
-               
-               }
-               
-               plot(1:length(mean_vector), mean_vector)     
-                    
-                    ## calculate all distances
-                    abs(mean(diff(u_vector[(u_index-2):(u_index+2)]))); abs(mean(diff(u_vector[(u_index-3):(u_index+3)])))
-                    abs(mean(diff(u_vector[(u_index-4):(u_index+4)]))); abs(mean(diff(u_vector[(u_index-5):(u_index+5)])))
-                    
-                    
-                    
+                    window_vector[n] = mean(mean_distances_in_window)
                     
                }
                
-               
-               
-               
+               return(window_vector)
           }
           
+          ## calculate windows
+          kek = vector(mode='list', length=length(track_data))
+          for (k in 1:length(track_data)) kek[[k]] = sliding.window(track_data[[k]][,"distance"], 10)
           
-          ## calculate distances in sliding window for distance col
-          lappply(runner_track[,"distance"], function(x))
+          ## plot windows
+          plot(1:length(kek[[4]]), log(kek[[4]]), type="l")
+          plot(1:length(kek[[1]]), log(kek[[1]]), type="l")
+          plot(1:length(kek[[7]]), log(kek[[7]]), type="l")
           
-          
-          
-          
-          mean_distances_in_window = rep(NA, 5)
-          for (n in 1:5) mean_distances_in_window[n] = mean(diff(dummy[(u_index-n):(u_index+n)]))
-          mean(mean_distances_in_window)
-          
-          mean(diff(dummy[(u_index-2):(u_index+2)]))
-          mean(diff(dummy[(u_index-3):(u_index+3)]))
-          mean(diff(dummy[(u_index-4):(u_index+4)]))
-          mean(diff(dummy[(u_index-5):(u_index+5)]))
+          ## plot track- data
+          plot(track_data[[1]][4000:7000,"X"], track_data[[1]][4000:7000,"Y"])
           
           
           
           
-          sliding.window = function(u_vector, u_index) {
-               
-               u_index = 5
-               
-               dummy[u_index]
-               
-               mean(dummy[(u_index[1]-5):(u_index[1]+5)])
-               
-          }
           
           
-          
-          
-          dummy[(u_index[1]-4):(u_index[1]+4)]
-          
-          
-          
-          unlist(lapply(dummy, function(x) is.numeric(x)))
-          
+                    
           
           
           
