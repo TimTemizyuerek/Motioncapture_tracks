@@ -665,11 +665,14 @@
           
           ## plot windows
           plot(1:length(kek[[4]]), log(kek[[4]]), type="l")
+          
+          par(mfrow=c(2,1))
           plot(1:length(kek[[1]]), log(kek[[1]]), type="l")
+          plot(1:nrow(track_data[[1]]), log(track_data[[1]][,"distance"]), type="l")
           plot(1:length(kek[[7]]), log(kek[[7]]), type="l")
           
           ## plot track- data
-          plot(track_data[[1]][4000:7000,"X"], track_data[[1]][4000:7000,"Y"])
+          plot(track_data[[1]][11000:12500,"X"], track_data[[1]][11000:12500,"Y"])
           
           
           
