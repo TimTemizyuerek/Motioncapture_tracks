@@ -463,6 +463,10 @@
           concise_data = read.table(paste(dir_data,"concise_data.txt", sep=""));concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           track_data = track.data(u_track_ID = track_list, u_data = concise_data)
           
+          ## remove tracks shorter than 10 minutes
+          track_data = track_data[which(unlist(lapply(track_data,nrow)) > 6000)]
+          
+          
      ## testing ####
           
           ## Are there overlapping time frame values in the tracks?
@@ -560,17 +564,17 @@
           ## how long are the tracks
           plot(1:length(unlist(lapply(track_data, nrow))), sort(unlist(lapply(track_data, nrow))))
           
-          ## plot tracks
+          # # plot tracks
           # for (n in 1:length(track_data)) {
           # 
           #      runner_track = track_data[[n]]
           #      palette(RColorBrewer::brewer.pal(12, "Set3"))
-          #      
+          # 
           #      ## create file for export
           #      png(filename=paste("Track_",n,".png",sep=""))
-          #      
-          #      plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)     
-          #      
+          # 
+          #      plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)
+          # 
           #      ## close graphic device
           #      dev.off()
           # }
@@ -640,6 +644,24 @@
           
      ## calculate waiting times #### 
           
+          ## plot distances
+          
+          # plot tracks
+          for (n in 1:length(track_data)) {
+
+               runner_track = track_data[[n]]
+               
+               ## create file for export
+               png(filename=paste("Distances in Track_",n,".png",sep=""), width=4000, height=1000)
+
+               plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
+               
+               ## close graphic device
+               dev.off()
+          }
+          
+          
+          
           ## sliding window function
           sliding.window = function(u_vector, u_window_length){
                
@@ -664,7 +686,12 @@
           for (k in 1:length(track_data)) kek[[k]] = sliding.window(track_data[[k]][,"distance"], 10)
           
           ## plot windows
-          plot(1:length(kek[[4]]), log(kek[[4]]), type="l")
+          for plot(1:nrow(track_data[[2]]), log(track_data[[2]][,"distance"]), type="l")
+          
+          test = track_data[[2]][,"distance"]
+          
+          smooth.spline(test)
+          
           
           par(mfrow=c(2,1))
           plot(1:length(kek[[1]]), log(kek[[1]]), type="l")
