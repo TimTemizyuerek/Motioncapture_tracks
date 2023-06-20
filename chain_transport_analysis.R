@@ -466,7 +466,6 @@
           ## remove tracks shorter than 10 minutes
           track_data = track_data[which(unlist(lapply(track_data,nrow)) > 6000)]
           
-          
      ## testing ####
           
           ## Are there overlapping time frame values in the tracks?
@@ -564,20 +563,20 @@
           ## how long are the tracks
           plot(1:length(unlist(lapply(track_data, nrow))), sort(unlist(lapply(track_data, nrow))))
           
-          # # plot tracks
-          # for (n in 1:length(track_data)) {
-          # 
-          #      runner_track = track_data[[n]]
-          #      palette(RColorBrewer::brewer.pal(12, "Set3"))
-          # 
-          #      ## create file for export
-          #      png(filename=paste("Track_",n,".png",sep=""))
-          # 
-          #      plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)
-          # 
-          #      ## close graphic device
-          #      dev.off()
-          # }
+          # plot tracks
+          for (n in 1:length(track_data)) {
+
+               runner_track = track_data[[n]]
+               palette(RColorBrewer::brewer.pal(12, "Set3"))
+
+               ## create file for export
+               png(filename=paste("Track_",n,".png",sep=""))
+
+               plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)
+
+               ## close graphic device
+               dev.off()
+          }
           
 ## 2. DATA ANALYSIS (WAITING TIMES) ####
      ## extract details for video matching ####
@@ -644,6 +643,30 @@
           
      ## calculate waiting times #### 
           
+          ## brutally smooth distances
+          
+          smoothed_data = vector(mode="list", length=length(track_data))
+          for(n in 1:length(track_data)){
+               
+               runner_track = track_data[[n]]
+               
+               smoothed_data[[n]] runner_track[is.na(runner_track[,"distance"])] = 0
+          }
+          
+          
+          
+          lapply(track_data, function(x) x[is.na(x[,"distance"])] = 0)
+               
+               
+          )
+          
+          
+          track_data[[1]][is.na(track_data[[1]][,"distance"])] = 0
+          
+          sum(is.na(track_data[[1]][,"distance"]))
+          
+          d[is.na(d)] <- 0
+          
           ## plot distances
           
           # plot tracks
@@ -655,6 +678,8 @@
                png(filename=paste("Distances in Track_",n,".png",sep=""), width=4000, height=1000)
 
                plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
+               
+               for (k in which(is.na(runner_track[,"distance"]) == TRUE)) abline(v=k,col="red")
                
                ## close graphic device
                dev.off()
