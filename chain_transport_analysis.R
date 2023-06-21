@@ -596,8 +596,10 @@
           under.camera = function(u_track_data, u_camera_cutoff) {
                
                ## output list
-               final_output = vector(mode='list', length=length(u_track_data)) 
-               
+               final_output = matrix(nrow = length(u_track_data), ncol=9) 
+               colnames(final_output) = c("track_ID", "c1_start", "c1_end", "c2_start", "c2_end",
+                                                      "c3_start", "c3_end", "c4_start", "c4_end")
+                                          
                for (n in 1:length(u_track_data)) {
                     
                     runner_track = u_track_data[[n]]
@@ -613,20 +615,22 @@
                                         runner_track[,"Y"] >= u_camera_cutoff[[4]][3] & runner_track[,"Y"] <= u_camera_cutoff[[4]][4])
                     
                     ## extract times
-                    camera_one_mins = round(range(runner_track[camera_one,"time_in_deciseconds"])/600,2)
-                    camera_two_mins = round(range(runner_track[camera_two,"time_in_deciseconds"])/600,2)
-                    camera_three_mins = round(range(runner_track[camera_three,"time_in_deciseconds"])/600,2)
-                    camera_four_mins = round(range(runner_track[camera_four,"time_in_deciseconds"])/600,2)
+                    camera_one_mins = round(range(runner_track[camera_one,"time_in_deciseconds"])/6,2)
+                    camera_two_mins = round(range(runner_track[camera_two,"time_in_deciseconds"])/6,2)
+                    camera_three_mins = round(range(runner_track[camera_three,"time_in_deciseconds"])/6,2)
+                    camera_four_mins = round(range(runner_track[camera_four,"time_in_deciseconds"])/6,2)
                
-                    ## output
-                    output = vector(mode='list', length=4)
-                    names(output) = c("cam1", "cam2", "cam3", "cam4")
-                    output[[1]] = camera_one_mins; output[[2]] = camera_two_mins; output[[3]] = camera_three_mins; output[[4]] = camera_four_mins;
-                    
-                    ## fill output list
-                    final_output[[n]] = output
+                    ## fill output matrix
+                    final_output[n,"track_ID"] = n
+                    final_output[n,"c1_start"] = camera_one_mins[1]; final_output[n,"c1_end"] = camera_one_mins[2]
+                    final_output[n,"c2_start"] = camera_two_mins[1]; final_output[n,"c2_end"] = camera_two_mins[2]
+                    final_output[n,"c3_start"] = camera_three_mins[1]; final_output[n,"c3_end"] = camera_three_mins[2]
+                    final_output[n,"c4_start"] = camera_four_mins[1]; final_output[n,"c4_end"] = camera_four_mins[2]
                     
                }
+               
+               ## replace Inf and -Inf by NA
+               final_output[sapply(final_output, is.infinite)] <- NA
                
                ## return output
                return(final_output)
@@ -635,11 +639,19 @@
           ## run function
           under_camera = under.camera(track_data, camera_cutoff)
           
+          under_camera[sapply(under_camera, is.infinite)] <- NA
+          
+          
           ## identify tracks that fall under camera
           number_of_cameras_per_track = lapply(under_camera, function(x) (sum(is.infinite(unlist(x)) == FALSE)/2))
           usable_tracks = which(number_of_cameras_per_track != 0)
           
-          print(paste(round(length(usable_tracks)/length(track_data),2)*100,"% of tracks fall under at least one camera"), sep="")
+          # print(paste(round(length(usable_tracks)/length(track_data),2)*100,"% of tracks fall under at least one camera"), sep="")
+          
+          ## create matrix to check stitching via cameras
+          
+          
+          
           
      ## calculate waiting times #### 
           
