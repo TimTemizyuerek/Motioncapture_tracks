@@ -615,10 +615,10 @@
                                         runner_track[,"Y"] >= u_camera_cutoff[[4]][3] & runner_track[,"Y"] <= u_camera_cutoff[[4]][4])
                     
                     ## extract times
-                    camera_one_mins = round(range(runner_track[camera_one,"time_in_deciseconds"])/6,2)
-                    camera_two_mins = round(range(runner_track[camera_two,"time_in_deciseconds"])/6,2)
-                    camera_three_mins = round(range(runner_track[camera_three,"time_in_deciseconds"])/6,2)
-                    camera_four_mins = round(range(runner_track[camera_four,"time_in_deciseconds"])/6,2)
+                    camera_one_mins = round(range(runner_track[camera_one,"time_in_deciseconds"])/60,2)
+                    camera_two_mins = round(range(runner_track[camera_two,"time_in_deciseconds"])/60,2)
+                    camera_three_mins = round(range(runner_track[camera_three,"time_in_deciseconds"])/60,2)
+                    camera_four_mins = round(range(runner_track[camera_four,"time_in_deciseconds"])/60,2)
                
                     ## fill output matrix
                     final_output[n,"track_ID"] = n
@@ -638,9 +638,6 @@
           
           ## run function
           under_camera = under.camera(track_data, camera_cutoff)
-          
-          under_camera[sapply(under_camera, is.infinite)] <- NA
-          
           
           ## identify tracks that fall under camera
           number_of_cameras_per_track = lapply(under_camera, function(x) (sum(is.infinite(unlist(x)) == FALSE)/2))
