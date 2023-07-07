@@ -432,7 +432,7 @@
           write.table(first_last_list[[1]], file=paste(dir_github,"stitching_data_first.txt", sep=""), sep="\t")
           write.table(first_last_list[[2]], file=paste(dir_github,"stitching_data_last.txt", sep=""), sep="\t")
           
-     ## stitch tracklets together (3000 iterations < 3 mins) ####
+     ## stitch tracklets together (5000 iterations < 3 mins) ####
           
           ## load data and make matrix for faster computation
           stitching_data_first = read.table(paste(dir_github,"stitching_data_first.txt", sep="")) 
