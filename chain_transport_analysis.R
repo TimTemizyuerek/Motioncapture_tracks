@@ -372,6 +372,7 @@
                raw_trail_outline_data = read.table(file = paste(dir_data, "Trail_outline.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
                clean_trail_data = m.concise.dataframe(raw_trail_outline_data); clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]
                clean_trail_data = clean_trail_data[-78,]; scatterplot3d::scatterplot3d(clean_trail_data[,"X"], clean_trail_data[,"Y"], clean_trail_data[,"Z"])
+               plot(clean_trail_data[,"X"], clean_trail_data[,"Y"])
                ## generate cutoff values
                low_cutoff_z = min(clean_trail_data[,"Z"]) - 100; high_cutoff_z = max(clean_trail_data[,"Z"]) + 100
                ## extract affected IDs
@@ -396,17 +397,25 @@
           rm(raw_concise_data)
           rm(raw_data)
           
-          ## identify camera fov
-          # ## plot trail outline
-          # plot(clean_trail_data[,"X"], clean_trail_data[,"Y"])
-          # ## 4th camera     
-          # points(clean_trail_data[c(3,14,46,58),"X"],clean_trail_data[c(3,14,46,58),"Y"], pch=21, bg="blue")
-          # ## 3rd camera
-          # points(clean_trail_data[c(25,49,71,79),"X"],clean_trail_data[c(25,49,71,79),"Y"], pch=21, bg="blue")
-          # ## 2nd camera
-          # points(clean_trail_data[c(27,32,35,59),"X"],clean_trail_data[c(27,32,35,59),"Y"], pch=21, bg="blue")
-          # ## 1st camera
-          # points(clean_trail_data[c(29,33,40,64),"X"],clean_trail_data[c(29,33,40,64),"Y"], pch=21, bg="blue")
+          # identify camera fov
+          ## plot trail outline
+          plot(clean_trail_data[,"X"], clean_trail_data[,"Y"], xlab="X", ylab="Y")
+          ## 4th camera
+          points(clean_trail_data[c(3,14,46,58),"X"],clean_trail_data[c(3,14,46,58),"Y"], pch=21, bg="blue")
+          polygon(clean_trail_data[c(14,3,46,58),"X"],clean_trail_data[c(14,3,46,58),"Y"],
+                  density=NA, col=scales::alpha("blue", alpha=0.3))
+          ## 3rd camera
+          points(clean_trail_data[c(25,49,71,79),"X"],clean_trail_data[c(25,49,71,79),"Y"], pch=21, bg="blue")
+          polygon(clean_trail_data[c(25,49,71,79),"X"],clean_trail_data[c(25,49,71,79),"Y"],
+                  density=NA, col=scales::alpha("blue", alpha=0.3))
+          ## 2nd camera
+          points(clean_trail_data[c(27,32,35,59),"X"],clean_trail_data[c(27,32,35,59),"Y"], pch=21, bg="blue")
+          polygon(clean_trail_data[c(32,27,35,59),"X"],clean_trail_data[c(32,27,35,59),"Y"],
+                  density=NA, col=scales::alpha("blue", alpha=0.3))
+          ## 1st camera
+          points(clean_trail_data[c(29,33,40,64),"X"],clean_trail_data[c(29,33,40,64),"Y"], pch=21, bg="blue")
+          polygon(clean_trail_data[c(33,40,29,64),"X"],clean_trail_data[c(33,40,29,64),"Y"],
+                  density=NA, col=scales::alpha("blue", alpha=0.3))
           
           ## save camera fov in matrix
           camera_fov = matrix(NA, nrow = 16, ncol=4); colnames(camera_fov) = c("X", "Y", "ID", "pos")
@@ -1242,27 +1251,41 @@
      ## show trail outline ####
           
           ## load trail outline (need only first row)
-          raw_trail_outline_data = read.table(file = paste("C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/ARCHIVE/", "Trail_outline.tsv", sep=""), 
-                                              sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
+          raw_trail_outline_data = read.table(file = paste(dir_data, "Trail_outline.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
           
           ## transform to concise format
           clean_trail_data = m.concise.dataframe(raw_trail_outline_data)
           clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]
+          
           
           ## plot trail outline
           plot(clean_trail_data[,"X"], clean_trail_data[,"Y"])
      
           ## 4th camera     
           points(clean_trail_data[c(3,14,46,58),"X"],clean_trail_data[c(3,14,46,58),"Y"], pch=21, bg="blue")
+          polygon(clean_trail_data[c(14,3,46,58),"X"],clean_trail_data[c(14,3,46,58),"Y"],
+                  density=NA, col=scales::alpha("blue", alpha=0.3))
           
           ## 3rd camera
           points(clean_trail_data[c(25,49,71,80),"X"],clean_trail_data[c(25,49,71,80),"Y"], pch=21, bg="blue")
+          polygon(clean_trail_data[c(25,49,71,80),"X"],clean_trail_data[c(25,49,71,80),"Y"],
+                  density=NA, col=scales::alpha("blue", alpha=0.3))
           
           ## 2nd camera
           points(clean_trail_data[c(27,32,35,59),"X"],clean_trail_data[c(27,32,35,59),"Y"], pch=21, bg="blue")
+          polygon(clean_trail_data[c(32,27,35,59),"X"],clean_trail_data[c(32,27,35,59),"Y"],
+                  density=NA, col=scales::alpha("blue", alpha=0.3))
           
           ## 1st camera
           points(clean_trail_data[c(29,33,40,64),"X"],clean_trail_data[c(29,33,40,64),"Y"], pch=21, bg="blue")
+          polygon(clean_trail_data[c(33,40,29,64),"X"],clean_trail_data[c(33,40,29,64),"Y"],
+                  density=NA, col=scales::alpha("blue", alpha=0.3))
+          
+          ## add text
+          text(-3300,6500, "Colony")
+          text(3300,2300, "Food")
+          which(clean_trail_data[,"Z"] > 2000)
+          
           
      ## fragment.stitcher tester ####
           
