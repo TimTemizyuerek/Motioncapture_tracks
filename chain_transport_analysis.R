@@ -10,8 +10,8 @@
 ## file patch, libraries & custom functions ####
 
      ## paths
-     dir_data = "C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/"
-     dir_github = "C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/Github repository/"
+     dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport - partial data, R script/"
+     dir_github = "C:/Users/timte/Desktop/Konstanz/Chain transport - partial data, R script/Github repository/"
      
      ## custom functions 
      
@@ -769,7 +769,7 @@
      ## load and handle data ####
      
      ## load raw data
-     video_data = read.table(file = paste("C:/Users/timte/Desktop/PhD Konstanz/Chain transport - partial data, R script/", "06102022_data_collection_0001_Miqus_38_27521_processed.txt", sep=""), 
+     video_data = read.table(file = paste("C:/Users/timte/Desktop/Konstanz/Chain transport - partial data, R script/", "06102022_data_collection_0001_Miqus_38_27521_processed.txt", sep=""), 
                              sep = '\t', header=TRUE, fill=FALSE)
      
      video_data[which(video_data[,2] != ""),c(1,2)]
