@@ -361,7 +361,13 @@
      ## load raw data and transform to manageable format (output as .txt) ~ 16 minutes ####
           
           ## read raw data, and format to easy-to-use-matrix
-          raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          ## raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          
+          ## remove measured col
+          ## raw_data = raw_data[,-c(seq(from=6, to=(ncol(raw_data)-2), by=4))]
+          
+          ## make concise data
           raw_concise_data = m.concise.dataframe(raw_data)
           
           ## calculate distances 
