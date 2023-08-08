@@ -775,9 +775,11 @@
      ## load and handle data ####
      
      ## load raw data
-     video_data = read.table(file = paste("C:/Users/timte/Desktop/Konstanz/Chain transport - partial data, R script/", "06102022_data_collection_0001_Miqus_38_27521_processed.txt", sep=""), 
-                             sep = '\t', header=TRUE, fill=FALSE)
+     video_data = read.table(file = paste("C:/Users/timte/Desktop/Konstanz/Chain transport - partial data, R script/Erik/This is how a master folder is supposed to look like/Ant_Trail_20221007/master_file_3_20221007.txt"),
+                                          sep = '\t', header=TRUE, fill=FALSE)
      
+          video_data[which(video_data[,15] != ""),15]
+          
      video_data[which(video_data[,2] != ""),c(1,2)]
      video_data[which(video_data[,3] != ""),c(1,3)]
      video_data[which(video_data[,4] != ""),c(1,4)]
