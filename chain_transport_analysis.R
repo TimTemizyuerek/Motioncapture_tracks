@@ -662,9 +662,6 @@
           
           ## create matrix to check stitching via cameras
           
-          
-          
-          
      ## calculate waiting times #### 
           
           ## list to store waiting events
@@ -676,7 +673,7 @@
                ## run through tracks
                runner_track = track_data[[n]]
                
-               ## remove NAs from trackls by computing average of the two adjacent values
+               ## remove NAs from tracks by computing average of the two adjacent values
                runner_na = which(is.na(runner_track[,"distance"]) == TRUE)
                for (m in 1:(length(runner_na)-1)) runner_track[runner_na[m], "distance"] = mean(c(runner_track[runner_na[m]-1,"distance"], runner_track[runner_na[m]+1,"distance"]))
                
@@ -695,7 +692,7 @@
                # points(runner_track[resting_track,"X"], runner_track[resting_track,"Y"],col="blue")
                # points(runner_track[walking_track,"X"], runner_track[walking_track,"Y"], type="l",col="red")
                
-               ## extract separate resting events (at least 10 seconds between events)
+               ## extract separate resting events (allow movement for 100 seconds during events)
                sep_events = c(1,which(diff(runner_track[resting_track,"frame_number"]) > 100))
                
                ## extract length of each event
