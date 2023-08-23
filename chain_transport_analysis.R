@@ -361,8 +361,8 @@
      ## load raw data and transform to manageable format (output as .txt) ~ 16 minutes ####
           
           ## read raw data, and format to easy-to-use-matrix
-          ## raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
-          raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          ## raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           
           ## remove measured col
           ## raw_data = raw_data[,-c(seq(from=6, to=(ncol(raw_data)-2), by=4))]
@@ -667,145 +667,45 @@
           
      ## calculate waiting times #### 
           
-          windows(50,15)
-          plot(1:nrow(track_data[[9]]), log(track_data[[9]][,"distance"]), type="l")
-          plot(track_data[[9]][,"X"], track_data[[9]][,"Y"])
+          ## list to store waiting events
+          waiting_data = vector(mode='list', length=length(track_data))
           
-          runner_track = track_data[[9]]
-          
-          ## remove NAs from trackls by computing average of the two adjacent values
-          runner_na = which(is.na(runner_track[,"distance"]) == TRUE)
-          for (m in 1:(length(runner_na)-1)) runner_track[runner_na[m], "distance"] = mean(c(runner_track[runner_na[m]-1,"distance"], runner_track[runner_na[m]+1,"distance"]))
-          
-          ## smooth distances
-          for (m in 1:4) runner_track[,"distance"] = runmed(runner_track[,"distance"],11)
-          
-          windows(50,15)
-          plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
-          abline(h=log(1.5))
-          
-          walking_track = which(runner_track[,"distance"] > 1.5)
-          resting_track = which(runner_track[,"distance"] < 1.5)
-          
-          plot(runner_track[,"X"], runner_track[,"Y"], type="l")
-          points(runner_track[resting_track,"X"], runner_track[resting_track,"Y"],col="blue")
-          points(runner_track[walking_track,"X"], runner_track[walking_track,"Y"], type="l",col="red")
-          
-          
-          
-          as     
-          
-          
-          
-          
-          
-          
-          
-          
-          ## brutally smooth distances
-          
-          smoothed_data = vector(mode="list", length=length(track_data))
-          for(n in 1:length(track_data)){
-               
-               runner_track = track_data[[n]]
-               
-               smoothed_data[[n]] runner_track[is.na(runner_track[,"distance"])] = 0
-          }
-          
-          
-          
-          lapply(track_data, function(x) x[is.na(x[,"distance"])] = 0)
-               
-               
-          )
-          
-          
-          track_data[[1]][is.na(track_data[[1]][,"distance"])] = 0
-          
-          sum(is.na(track_data[[1]][,"distance"]))
-          
-          d[is.na(d)] <- 0
-          
-          ## plot distances
-          
-          # plot tracks
+          ## extract waiting events
           for (n in 1:length(track_data)) {
-
+               
+               ## run through tracks
                runner_track = track_data[[n]]
                
-               ## create file for export
-               png(filename=paste("Distances in Track_",n,".png",sep=""), width=4000, height=1000)
-
-               plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
+               ## remove NAs from trackls by computing average of the two adjacent values
+               runner_na = which(is.na(runner_track[,"distance"]) == TRUE)
+               for (m in 1:(length(runner_na)-1)) runner_track[runner_na[m], "distance"] = mean(c(runner_track[runner_na[m]-1,"distance"], runner_track[runner_na[m]+1,"distance"]))
                
-               for (k in which(is.na(runner_track[,"distance"]) == TRUE)) abline(v=k,col="red")
+               ## smooth distances
+               for (m in 1:4) runner_track[,"distance"] = runmed(runner_track[,"distance"],11)
                
-               ## close graphic device
-               dev.off()
+               # windows(50,15)
+               # plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
+               # abline(h=log(1.5))
+               
+               ## set cutoff at 1.5mm/ds which equals 15 mm/s which equals 30% of average walking speed (https://doi.org/10.1007/s000400300001)
+               walking_track = which(runner_track[,"distance"] > 1.5)
+               resting_track = which(runner_track[,"distance"] < 1.5)
+               
+               # plot(runner_track[,"X"], runner_track[,"Y"], type="l")
+               # points(runner_track[resting_track,"X"], runner_track[resting_track,"Y"],col="blue")
+               # points(runner_track[walking_track,"X"], runner_track[walking_track,"Y"], type="l",col="red")
+               
+               ## extract separate resting events (at least 10 seconds between events)
+               sep_events = c(1,which(diff(runner_track[resting_track,"frame_number"]) > 100))
+               
+               ## extract length of each event
+               sep_len = diff(sep_events)
+               
+               ## remove events shorter than 10 seconds
+               waiting_data[[n]] = sep_len[which(sep_len > 100)]
           }
           
           
-          
-          ## sliding window function
-          sliding.window = function(u_vector, u_window_length){
-               
-               ## vector to store window values in
-               window_vector = rep(NA, length(u_vector))
-               
-               ## calculate window
-               for (n in 1:(length(u_vector)-u_window_length)) {
-                    
-                    ## calculate individual means / take the grand mean
-                    mean_distances_in_window = rep(NA, u_window_length)
-                    for (m in 1:u_window_length) mean_distances_in_window[m] = round(abs(mean(diff(u_vector[n:(n+m)]))),3)
-                    window_vector[n] = mean(mean_distances_in_window)
-                    
-               }
-               
-               return(window_vector)
-          }
-          
-          ## calculate windows
-          kek = vector(mode='list', length=length(track_data))
-          for (k in 1:length(track_data)) kek[[k]] = sliding.window(track_data[[k]][,"distance"], 10)
-          
-          ## plot windows
-          for plot(1:nrow(track_data[[2]]), log(track_data[[2]][,"distance"]), type="l")
-          
-          test = track_data[[2]][,"distance"]
-          
-          smooth.spline(test)
-          
-          
-          par(mfrow=c(2,1))
-          plot(1:length(kek[[1]]), log(kek[[1]]), type="l")
-          plot(1:nrow(track_data[[1]]), log(track_data[[1]][,"distance"]), type="l")
-          plot(1:length(kek[[7]]), log(kek[[7]]), type="l")
-          
-          ## plot track- data
-          plot(track_data[[1]][11000:12500,"X"], track_data[[1]][11000:12500,"Y"])
-          
-          
-          
-          
-          
-          
-                    
-          
-          
-          
-          ## filter for tracks that fall under camera
-          usable_track_data = track_data[usable_tracks]
-          
-          ## calculate waiting times, at least one min
-          track_distance_data = wait.calculator(usable_track_data, 600)
-          
-          ## how many waiting events
-          length(unlist(track_distance_data))
-          
-          ## plot quick-and-dirty hist
-          hist(unlist(track_distance_data), breaks= 50)
-     
 ## 3. Video data ####
      ## load and handle data ####
      
@@ -829,6 +729,24 @@
      
      
 ## 4. ARCHIVE ####
+     ## plotter ####
+     
+     # plot tracks
+     for (n in 1:length(track_data)) {
+          
+          runner_track = track_data[[n]]
+          
+          ## create file for export
+          png(filename=paste("Distances in Track_",n,".png",sep=""), width=4000, height=1000)
+          
+          plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
+          
+          for (k in which(is.na(runner_track[,"distance"]) == TRUE)) abline(v=k,col="red")
+          
+          ## close graphic device
+          dev.off()
+     }
+     
      ## stitching example that works ####
      
      ## version that works for the example
