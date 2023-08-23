@@ -667,6 +667,41 @@
           
      ## calculate waiting times #### 
           
+          windows(50,15)
+          plot(1:nrow(track_data[[9]]), log(track_data[[9]][,"distance"]), type="l")
+          plot(track_data[[9]][,"X"], track_data[[9]][,"Y"])
+          
+          runner_track = track_data[[9]]
+          
+          ## remove NAs from trackls by computing average of the two adjacent values
+          runner_na = which(is.na(runner_track[,"distance"]) == TRUE)
+          for (m in 1:(length(runner_na)-1)) runner_track[runner_na[m], "distance"] = mean(c(runner_track[runner_na[m]-1,"distance"], runner_track[runner_na[m]+1,"distance"]))
+          
+          ## smooth distances
+          for (m in 1:4) runner_track[,"distance"] = runmed(runner_track[,"distance"],11)
+          
+          windows(50,15)
+          plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
+          abline(h=log(1.5))
+          
+          walking_track = which(runner_track[,"distance"] > 1.5)
+          resting_track = which(runner_track[,"distance"] < 1.5)
+          
+          plot(runner_track[,"X"], runner_track[,"Y"], type="l")
+          points(runner_track[resting_track,"X"], runner_track[resting_track,"Y"],col="blue")
+          points(runner_track[walking_track,"X"], runner_track[walking_track,"Y"], type="l",col="red")
+          
+          
+          
+          as     
+          
+          
+          
+          
+          
+          
+          
+          
           ## brutally smooth distances
           
           smoothed_data = vector(mode="list", length=length(track_data))
