@@ -361,8 +361,8 @@
      ## load raw data and transform to manageable format (output as .txt) ~ 16 minutes ####
           
           ## read raw data, and format to easy-to-use-matrix
-          raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
-          ## raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          ## raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           
           ## remove measured col
           ## raw_data = raw_data[,-c(seq(from=6, to=(ncol(raw_data)-2), by=4))]
@@ -678,7 +678,7 @@
                for (m in 1:(length(runner_na)-1)) runner_track[runner_na[m], "distance"] = mean(c(runner_track[runner_na[m]-1,"distance"], runner_track[runner_na[m]+1,"distance"]))
                
                ## smooth distances
-               for (m in 1:4) runner_track[,"distance"] = runmed(runner_track[,"distance"],11)
+               for (m in 1:4) runner_track[,"distance"] = runmed(runner_track[,"distance"],111)
                
                # windows(50,15)
                # plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
@@ -688,9 +688,9 @@
                walking_track = which(runner_track[,"distance"] > 1.5)
                resting_track = which(runner_track[,"distance"] < 1.5)
                
-               # plot(runner_track[,"X"], runner_track[,"Y"], type="l")
-               # points(runner_track[resting_track,"X"], runner_track[resting_track,"Y"],col="blue")
-               # points(runner_track[walking_track,"X"], runner_track[walking_track,"Y"], type="l",col="red")
+               plot(runner_track[,"X"], runner_track[,"Y"], type="l")
+               points(runner_track[resting_track,"X"], runner_track[resting_track,"Y"],col="blue")
+               points(runner_track[walking_track,"X"], runner_track[walking_track,"Y"], type="l",col="red")
                
                ## extract separate resting events (allow movement for 100 seconds during events)
                sep_events = c(1,which(diff(runner_track[resting_track,"frame_number"]) > 100))
