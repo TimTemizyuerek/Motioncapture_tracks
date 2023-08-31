@@ -10,8 +10,8 @@
 ## file patch, libraries & custom functions ####
 
      ## paths
-     dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport - partial data, R script/"
-     dir_github = "C:/Users/timte/Desktop/Konstanz/Chain transport - partial data, R script/Github repository/"
+     dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport/"
+     dir_github = "C:/Users/timte/Desktop/Konstanz/Chain transport/Github repository/"
      
      ## custom functions 
      
@@ -361,8 +361,8 @@
      ## load raw data and transform to manageable format (output as .txt) ~ 16 minutes ####
           
           ## read raw data, and format to easy-to-use-matrix
-          ## raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
-          raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          ## raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           
           ## remove measured col
           ## raw_data = raw_data[,-c(seq(from=6, to=(ncol(raw_data)-2), by=4))]
@@ -707,16 +707,109 @@
      ## load and handle data ####
      
      ## load raw data
-     video_data = read.table(file = paste("C:/Users/timte/Desktop/Konstanz/Chain transport - partial data, R script/Erik/This is how a master folder is supposed to look like/Ant_Trail_20221007/master_file_3_20221007.txt"),
-                                          sep = '\t', header=TRUE, fill=FALSE)
+     video_data = read.table(file = paste("C:/Users/timte/Desktop/Konstanz/Chain transport/Erik/master/Ant_Trail_20221007/master_file_3_20221007.txt"),sep = '\t', header=TRUE, fill=FALSE)
      
+          
+          
+          
+          
+     video_data = read.table(file = paste("C:/Users/timte/Desktop/Konstanz/Chain transport/Erik/master/Ant_Trail_20221007/05102022_data_collection_0001_Miqus_38_27521_processed.txt"),sep = '\t', header=TRUE, fill=FALSE)
+     
+     
+          
+          
+          
+     ## too complicated, just use the individual files -> does this work?
+          
+     ## transform master file into convenient table for matching to tracks
+     for (n in 2:(ncol(video_data))) {
+          
+          ## create list for split dataframes
+          runner_dfs = vector(mode="list", length=5)
+          
+          ## extract brakes
+          breaks = which(video_data[,10] == "BREAK")
+          
+          ## split dataframes
+          if (length(breaks) == 0) { runner_dfs[[1]] = video_data
+          } else if (length(breaks) == 1){ runner_dfs[[1]] = video_data[1:breaks[1],]; runner_dfs[[2]] = video_data[breaks[1]:nrow(video_data),]
+          } else if (length(breaks) == 2){ runner_dfs[[1]] = video_data[1:breaks[1],]; runner_dfs[[2]] = video_data[breaks[1]:breaks[2],]; runner_dfs[[3]] = video_data[breaks[2]:nrow(video_data),]}
+          
+          ## reset time col in the split dfs
+          for (m in 1:(length(breaks)+1)) runner_dfs[[m]][,"Time"] = 1:nrow(runner_dfs[[m]])
+          
+          ## find shape in each col
+          shape_by_col = vector(mode="list", length=5)
+          for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = apply(runner_dfs[[m]][,2:ncol(runner_dfs[[m]])], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE") == TRUE))
+          for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = as.numeric(shape_by_col[[m]][which(shape_by_col[[m]] > 0)])
+          
+          
+          for (k in 1:length(shape_by_col[[1]]))
+          
+          runner_dfs[[1]][,]
+          
+          
+          ## find enter before shape
+          for (k in 1:(length(breaks)+1)) {
+               
+               
+               
+               
+          }
+               
+               
+               
+          runner_dfs[[1]]
+          
+          
+          
+          ; 
+          
+          shape_by_col = 
+          shape_by_col = as.numeric(shape_by_col[which(shape_by_col > 0)])
+          
+          
+          runner-shape_by_col[1]
+          
+          for (k in 1:shape_by_col) {}
+          
+          indices<-which(v>=0)
+          v<-v[indices]
+          
+          
+          kek = c(1,2,3,4)
+          
+          kek %in% c(1,2)
+          
+          
+          which(runner_dfs[[3]] == "HEART")
+          which(runner_dfs[[3]] == "CIRCLE")
+          
+          runner_dfs[[1]][,1:ncol(runner_dfs[[1]])]
+          
+          
+          ## get values from col n
+          runner_df = video_data[which(video_data[,n] != ""),c(1,n)]
+          
+          
+          
+               
+          
+     
+          
+          
+     }
+          
+          
           video_data[which(video_data[,15] != ""),15]
           
+          
+     video_data[which(video_data[,n] != ""),c(1,n)]     
      video_data[which(video_data[,2] != ""),c(1,2)]
      video_data[which(video_data[,3] != ""),c(1,3)]
      video_data[which(video_data[,4] != ""),c(1,4)]
      video_data[which(video_data[,5] != ""),c(1,5)]
-     video_data[which(video_data[,6] != ""),c(1,6)]
+     video_data[which(video_data[,40] != ""),c(1,40)]
      
      
      sd 
