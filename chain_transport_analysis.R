@@ -708,24 +708,11 @@
      
      ## load raw data
      video_data = read.table(file = paste("C:/Users/timte/Desktop/Konstanz/Chain transport/Erik/master/Ant_Trail_20221007/master_file_3_20221007.txt"),sep = '\t', header=TRUE, fill=FALSE)
-     
-          
-          
-          
-          
-     video_data = read.table(file = paste("C:/Users/timte/Desktop/Konstanz/Chain transport/Erik/master/Ant_Trail_20221007/05102022_data_collection_0001_Miqus_38_27521_processed.txt"),sep = '\t', header=TRUE, fill=FALSE)
-     
-     
-          
-          
-          
-     ## too complicated, just use the individual files -> does this work?
-          
+
      ## transform master file into convenient table for matching to tracks
-     for (n in 2:(ncol(video_data))) {
           
           ## create list for split dataframes
-          runner_dfs = vector(mode="list", length=5)
+          runner_dfs = vector(mode="list", length=3)
           
           ## extract brakes
           breaks = which(video_data[,10] == "BREAK")
@@ -739,12 +726,49 @@
           for (m in 1:(length(breaks)+1)) runner_dfs[[m]][,"Time"] = 1:nrow(runner_dfs[[m]])
           
           ## find shape in each col
-          shape_by_col = vector(mode="list", length=5)
+          shape_by_col = vector(mode="list", length=length(breaks)+1)
           for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = apply(runner_dfs[[m]][,2:ncol(runner_dfs[[m]])], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE") == TRUE))
-          for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = as.numeric(shape_by_col[[m]][which(shape_by_col[[m]] > 0)])
+          for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = as.numeric(which(shape_by_col[[m]] > 0))+1
+          
+          ## create output 
+          output_list_df = vector(mode="list", length=length(breaks)+1)
+          
+          ## extract shape and store time and shape in df
+          for (k in 1:(length(breaks)+1)) {
+               
+               ## extract cols with a shape
+               runner = runner_dfs[[k]][,c(1,shape_by_col[[k]])]
+               
+               ## extract entry time
+               runner_time =  runner[as.numeric(apply(runner[,2:ncol(runner)], 2, function(x) which(x == "ENTER_RIGHT"))),"Time"]
+               
+               ## extract shape
+               runner_shape = runner[apply(runner[,2:ncol(runner)], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE"))),2:ncol(runner)]
+               runner_shape = as.vector(unlist(runner_shape)[which(unlist(runner_shape) != "")])
+               runner_shape = runner_shape[which(runner_shape %in% c("STAR", "HEART", "CIRCLE"))]
+               
+               ## combine in df
+               output_list_df[[k]] = data.frame("time" = runner_time,
+                                                "shape" = runner_shape)
+               
+          }
+     
+     
           
           
-          for (k in 1:length(shape_by_col[[1]]))
+          runner_dfs[[2]][shape_by_col[[2]],which(as.vector(apply(runner_dfs[[k]][shape_by_col[[k]],2:ncol(runner_dfs[[k]])],2,function(x) any(x %in% c("STAR", "HEART", "CIRCLE")))) == TRUE)]
+          
+          runner_dfs[[2]][shape_by_col[[2]],]
+          
+          
+          shapes = vector()
+          
+          ## store shapes
+          for (k in 1:(length(breaks)+1))  {
+               
+               for(i in 1:length(shape_by_col[[k]])) shapes[[k]][i] = is.character(runner_dfs[[k]][shape_by_col[[k]][i],])
+          }
+               shape_by_col[[1]][]
           
           runner_dfs[[1]][,]
           
