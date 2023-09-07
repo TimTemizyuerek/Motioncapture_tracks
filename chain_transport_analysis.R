@@ -361,8 +361,11 @@
      ## load raw data and transform to manageable format (output as .txt) ~ 16 minutes ####
           
           ## read raw data, and format to easy-to-use-matrix
-          raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          ## raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           ## raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          
+          ## example for new grant     
+          raw_data = read.table(file = paste(dir_data, "05102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           
           ## remove measured col
           ## raw_data = raw_data[,-c(seq(from=6, to=(ncol(raw_data)-2), by=4))]
@@ -397,55 +400,55 @@
                raw_concise_data = raw_concise_data[-which(raw_concise_data[,"ID"] %in% IDs_to_remove_because_of_z_diff),]
                
           ## export new dataframe to txt
-          write.table(raw_concise_data, file=paste(dir_data,"concise_data.txt", sep=""), sep="\t")
+          write.table(raw_concise_data, file=paste(dir_data,"05102022_data_collection_0001_concise_data.txt", sep=""), sep="\t")
           
           ## remove objects to free up space
           rm(raw_concise_data)
           rm(raw_data)
           
-          # identify camera fov
-          ## plot trail outline
-          plot(clean_trail_data[,"X"], clean_trail_data[,"Y"], xlab="X", ylab="Y")
-          ## 4th camera
-          points(clean_trail_data[c(3,14,46,58),"X"],clean_trail_data[c(3,14,46,58),"Y"], pch=21, bg="blue")
-          polygon(clean_trail_data[c(14,3,46,58),"X"],clean_trail_data[c(14,3,46,58),"Y"],
-                  density=NA, col=scales::alpha("blue", alpha=0.3))
-          ## 3rd camera
-          points(clean_trail_data[c(25,49,71,79),"X"],clean_trail_data[c(25,49,71,79),"Y"], pch=21, bg="blue")
-          polygon(clean_trail_data[c(25,49,71,79),"X"],clean_trail_data[c(25,49,71,79),"Y"],
-                  density=NA, col=scales::alpha("blue", alpha=0.3))
-          ## 2nd camera
-          points(clean_trail_data[c(27,32,35,59),"X"],clean_trail_data[c(27,32,35,59),"Y"], pch=21, bg="blue")
-          polygon(clean_trail_data[c(32,27,35,59),"X"],clean_trail_data[c(32,27,35,59),"Y"],
-                  density=NA, col=scales::alpha("blue", alpha=0.3))
-          ## 1st camera
-          points(clean_trail_data[c(29,33,40,64),"X"],clean_trail_data[c(29,33,40,64),"Y"], pch=21, bg="blue")
-          polygon(clean_trail_data[c(33,40,29,64),"X"],clean_trail_data[c(33,40,29,64),"Y"],
-                  density=NA, col=scales::alpha("blue", alpha=0.3))
-          
-          ## save camera fov in matrix
-          camera_fov = matrix(NA, nrow = 16, ncol=4); colnames(camera_fov) = c("X", "Y", "ID", "pos")
-          camera_fov[,"ID"] = sort(rep(1:4,4)); camera_fov[,"pos"] = rep(1:4,4)
-          camera_fov[,"X"] = c(clean_trail_data[c(64,29,33,40, 35,59,27,32, 49,71,25,79, 14,3,58,46),"X"])
-          camera_fov[,"Y"] = c(clean_trail_data[c(64,29,33,40, 35,59,27,32, 49,71,25,79, 14,3,58,46),"Y"])
-          
-          ## export matrix
-          write.table(camera_fov, file=paste(dir_github,"camera_fov.txt", sep=""), sep="\t")
-          
-          ## remove object
-          rm(camera_fov)
+          # # identify camera fov
+          # ## plot trail outline
+          # plot(clean_trail_data[,"X"], clean_trail_data[,"Y"], xlab="X", ylab="Y")
+          # ## 4th camera
+          # points(clean_trail_data[c(3,14,46,58),"X"],clean_trail_data[c(3,14,46,58),"Y"], pch=21, bg="blue")
+          # polygon(clean_trail_data[c(14,3,46,58),"X"],clean_trail_data[c(14,3,46,58),"Y"],
+          #         density=NA, col=scales::alpha("blue", alpha=0.3))
+          # ## 3rd camera
+          # points(clean_trail_data[c(25,49,71,79),"X"],clean_trail_data[c(25,49,71,79),"Y"], pch=21, bg="blue")
+          # polygon(clean_trail_data[c(25,49,71,79),"X"],clean_trail_data[c(25,49,71,79),"Y"],
+          #         density=NA, col=scales::alpha("blue", alpha=0.3))
+          # ## 2nd camera
+          # points(clean_trail_data[c(27,32,35,59),"X"],clean_trail_data[c(27,32,35,59),"Y"], pch=21, bg="blue")
+          # polygon(clean_trail_data[c(32,27,35,59),"X"],clean_trail_data[c(32,27,35,59),"Y"],
+          #         density=NA, col=scales::alpha("blue", alpha=0.3))
+          # ## 1st camera
+          # points(clean_trail_data[c(29,33,40,64),"X"],clean_trail_data[c(29,33,40,64),"Y"], pch=21, bg="blue")
+          # polygon(clean_trail_data[c(33,40,29,64),"X"],clean_trail_data[c(33,40,29,64),"Y"],
+          #         density=NA, col=scales::alpha("blue", alpha=0.3))
+          # 
+          # ## save camera fov in matrix
+          # camera_fov = matrix(NA, nrow = 16, ncol=4); colnames(camera_fov) = c("X", "Y", "ID", "pos")
+          # camera_fov[,"ID"] = sort(rep(1:4,4)); camera_fov[,"pos"] = rep(1:4,4)
+          # camera_fov[,"X"] = c(clean_trail_data[c(64,29,33,40, 35,59,27,32, 49,71,25,79, 14,3,58,46),"X"])
+          # camera_fov[,"Y"] = c(clean_trail_data[c(64,29,33,40, 35,59,27,32, 49,71,25,79, 14,3,58,46),"Y"])
+          # 
+          # ## export matrix
+          # write.table(camera_fov, file=paste(dir_github,"camera_fov.txt", sep=""), sep="\t")
+          # 
+          # ## remove object
+          # rm(camera_fov)
           
      ## extract first and last datapoint for each tracklet ~ 12 minutes ####
           
           ## load data and make matrix
-          concise_data = read.table(paste(dir_data,"concise_data.txt", sep="")); concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
+          concise_data = read.table(paste(dir_data,"05102022_data_collection_0001_concise_data.txt", sep="")); concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           
           ## extract first and last item from each tracklet
           first_last_list = first.last.finder(concise_data)
           
           ## export short dataframes
-          write.table(first_last_list[[1]], file=paste(dir_github,"stitching_data_first.txt", sep=""), sep="\t")
-          write.table(first_last_list[[2]], file=paste(dir_github,"stitching_data_last.txt", sep=""), sep="\t")
+          write.table(first_last_list[[1]], file=paste(dir_github,"05102022_data_collection_0001_stitching_data_first.txt", sep=""), sep="\t")
+          write.table(first_last_list[[2]], file=paste(dir_github,"05102022_data_collection_0001_stitching_data_last.txt", sep=""), sep="\t")
           
      ## stitch tracklets together (5000 iterations < 3 mins) ####
           
@@ -753,93 +756,7 @@
                
           }
      
-     
-          
-          
-          runner_dfs[[2]][shape_by_col[[2]],which(as.vector(apply(runner_dfs[[k]][shape_by_col[[k]],2:ncol(runner_dfs[[k]])],2,function(x) any(x %in% c("STAR", "HEART", "CIRCLE")))) == TRUE)]
-          
-          runner_dfs[[2]][shape_by_col[[2]],]
-          
-          
-          shapes = vector()
-          
-          ## store shapes
-          for (k in 1:(length(breaks)+1))  {
-               
-               for(i in 1:length(shape_by_col[[k]])) shapes[[k]][i] = is.character(runner_dfs[[k]][shape_by_col[[k]][i],])
-          }
-               shape_by_col[[1]][]
-          
-          runner_dfs[[1]][,]
-          
-          
-          ## find enter before shape
-          for (k in 1:(length(breaks)+1)) {
-               
-               
-               
-               
-          }
-               
-               
-               
-          runner_dfs[[1]]
-          
-          
-          
-          ; 
-          
-          shape_by_col = 
-          shape_by_col = as.numeric(shape_by_col[which(shape_by_col > 0)])
-          
-          
-          runner-shape_by_col[1]
-          
-          for (k in 1:shape_by_col) {}
-          
-          indices<-which(v>=0)
-          v<-v[indices]
-          
-          
-          kek = c(1,2,3,4)
-          
-          kek %in% c(1,2)
-          
-          
-          which(runner_dfs[[3]] == "HEART")
-          which(runner_dfs[[3]] == "CIRCLE")
-          
-          runner_dfs[[1]][,1:ncol(runner_dfs[[1]])]
-          
-          
-          ## get values from col n
-          runner_df = video_data[which(video_data[,n] != ""),c(1,n)]
-          
-          
-          
-               
-          
-     
-          
-          
-     }
-          
-          
-          video_data[which(video_data[,15] != ""),15]
-          
-          
-     video_data[which(video_data[,n] != ""),c(1,n)]     
-     video_data[which(video_data[,2] != ""),c(1,2)]
-     video_data[which(video_data[,3] != ""),c(1,3)]
-     video_data[which(video_data[,4] != ""),c(1,4)]
-     video_data[which(video_data[,5] != ""),c(1,5)]
-     video_data[which(video_data[,40] != ""),c(1,40)]
-     
-     
-     sd 
-     
-     
-     
+
      
      
 ## 4. ARCHIVE ####
