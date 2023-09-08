@@ -13,7 +13,7 @@
      dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport/"
      dir_github = "C:/Users/timte/Desktop/Konstanz/Chain transport/Github repository/"
      
-     ## custom functions 
+     ## custom functions
      
      ## make raw dataframe into concise matrix (I am speed)
      ## produces: matrix with cols: frame_number, time_in_deciseconds, X, Y, Z & ID
@@ -50,7 +50,7 @@
                concise_matrix = rbind(concise_matrix, runner_merger)
           
                ## progress update
-               print(paste(round(n/(ncol(input_ma)),5)*100," %",sep=""))
+               print(paste("concise: ",round(n/(ncol(input_ma)),5)*100," %",sep=""))
           }
           
           ## name the cols of the matrix for convenience
@@ -367,8 +367,9 @@
           ## example for new grant     
           raw_data = read.table(file = paste(dir_data, "05102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           
-          ## remove measured col
-          ## raw_data = raw_data[,-c(seq(from=6, to=(ncol(raw_data)-2), by=4))]
+          ## remove "measured-col" from the dataframe and make matrix
+          col_to_remove = as.numeric(which(apply(raw_data, 2, function(x) sum(unique(x) == "Measured", na.rm=TRUE)) == 1))
+          raw_data = as.matrix(raw_data[,-col_to_remove])
           
           ## make concise data
           raw_concise_data = m.concise.dataframe(raw_data)
