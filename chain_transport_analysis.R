@@ -365,7 +365,9 @@
           ## raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           
           ## example for new grant     
-          raw_data = read.table(file = paste(dir_data, "05102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          # raw_data = read.table(file = paste(dir_data, "05102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          # raw_data = read.table(file = paste(dir_data, "05102022_data_collection_0002.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          raw_data = read.table(file = paste(dir_data, "05102022_data_collection_0003.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           
           ## remove "measured-col" from the dataframe and make matrix
           col_to_remove = as.numeric(which(apply(raw_data, 2, function(x) sum(unique(x) == "Measured", na.rm=TRUE)) == 1))
@@ -398,10 +400,11 @@
                ## identify tracklets with jumps of more than 5cm
                IDs_to_remove_because_of_z_diff = raw_concise_data[which(z_distances >= 50),"ID"]
                ## remove them
-               raw_concise_data = raw_concise_data[-which(raw_concise_data[,"ID"] %in% IDs_to_remove_because_of_z_diff),]
+               if (length(IDs_to_remove_because_of_z_diff) > 0) {raw_concise_data = raw_concise_data[-which(raw_concise_data[,"ID"] %in% IDs_to_remove_because_of_z_diff),]}
+               
                
           ## export new dataframe to txt
-          write.table(raw_concise_data, file=paste(dir_data,"05102022_data_collection_0001_concise_data.txt", sep=""), sep="\t")
+          write.table(raw_concise_data, file=paste(dir_data,"05102022_data_collection_0003_concise_data.txt", sep=""), sep="\t")
           
           ## remove objects to free up space
           rm(raw_concise_data)
@@ -442,14 +445,14 @@
      ## extract first and last datapoint for each tracklet ~ 12 minutes ####
           
           ## load data and make matrix
-          concise_data = read.table(paste(dir_data,"05102022_data_collection_0001_concise_data.txt", sep="")); concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
+          concise_data = read.table(paste(dir_data,"05102022_data_collection_0003_concise_data.txt", sep="")); concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           
           ## extract first and last item from each tracklet
           first_last_list = first.last.finder(concise_data)
           
           ## export short dataframes
-          write.table(first_last_list[[1]], file=paste(dir_github,"05102022_data_collection_0001_stitching_data_first.txt", sep=""), sep="\t")
-          write.table(first_last_list[[2]], file=paste(dir_github,"05102022_data_collection_0001_stitching_data_last.txt", sep=""), sep="\t")
+          write.table(first_last_list[[1]], file=paste(dir_github,"05102022_data_collection_0003_stitching_data_first.txt", sep=""), sep="\t")
+          write.table(first_last_list[[2]], file=paste(dir_github,"05102022_data_collection_0003_stitching_data_last.txt", sep=""), sep="\t")
           
      ## stitch tracklets together (5000 iterations < 3 mins) ####
           
