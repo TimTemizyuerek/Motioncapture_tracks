@@ -10,8 +10,8 @@
 ## file patch, libraries & custom functions ####
 
      ## paths
-     dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport/"
-     dir_github = "C:/Users/timte/Desktop/Konstanz/Chain transport/Github repository/"
+     dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport/pfolder/"
+     # dir_github = "C:/Users/timte/Desktop/Konstanz/Chain transport/Github repository/"
      
      ## custom functions
      
@@ -358,57 +358,70 @@
           
      
 ## 1. DATA PREPARATION (LOADING, TRANSFORMATION, STITCHING) ####
-     ## load raw data and transform to manageable format (output as .txt) ~ 16 minutes ####
+     ## load raw data and transform to concise matrix ####
+     
+     ## raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+     ## raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+     
+     ## automate for several files
+     tsv_files = list.files(dir_data, pattern=".tsv")
+     
+     ## loop through files
+     for (n in 1:length(tsv_files)) {
           
-          ## read raw data, and format to easy-to-use-matrix
-          ## raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
-          ## raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          ## print process
+          print(paste("processing file ", n, " out of", length(tsv_files)), sep="")
           
-          ## example for new grant     
-          # raw_data = read.table(file = paste(dir_data, "05102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
-          # raw_data = read.table(file = paste(dir_data, "05102022_data_collection_0002.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
-          raw_data = read.table(file = paste(dir_data, "05102022_data_collection_0003.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          ## load file
+          runner_raw_data = read.table(file = paste(dir_data, tsv_files[n], sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           
-          ## remove "measured-col" from the dataframe and make matrix
-          col_to_remove = as.numeric(which(apply(raw_data, 2, function(x) sum(unique(x) == "Measured", na.rm=TRUE)) == 1))
-          raw_data = as.matrix(raw_data[,-col_to_remove])
+          ## remove "measured-col" from the dataframe (if necessary) and make matrix
+          col_to_remove = as.numeric(which(apply(runner_raw_data, 2, function(x) sum(unique(x) == "Measured", na.rm=TRUE)) == 1))
+          runner_raw_data = as.matrix(runner_raw_data[,-col_to_remove])
           
           ## make concise data
-          raw_concise_data = m.concise.dataframe(raw_data)
-          
-          ## calculate distances 
-          raw_concise_data = distance.calculator(raw_concise_data)
-          
-          ## remove tracklets with too high/low Z values
-               ## use Z values of the trail outline + 10 cm buffer
-               raw_trail_outline_data = read.table(file = paste(dir_data, "Trail_outline.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
-               clean_trail_data = m.concise.dataframe(raw_trail_outline_data); clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]
-               clean_trail_data = clean_trail_data[-78,]; scatterplot3d::scatterplot3d(clean_trail_data[,"X"], clean_trail_data[,"Y"], clean_trail_data[,"Z"])
-               plot(clean_trail_data[,"X"], clean_trail_data[,"Y"])
-               ## generate cutoff values
-               low_cutoff_z = min(clean_trail_data[,"Z"]) - 100; high_cutoff_z = max(clean_trail_data[,"Z"]) + 100
-               ## extract affected IDs
-               IDs_to_remove_because_z = unique(raw_concise_data[which(raw_concise_data[,"Z"] <= low_cutoff_z | raw_concise_data[,"Z"] >= high_cutoff_z),][,"ID"])
-               ## remove affected IDs
-               raw_concise_data = raw_concise_data[-which(raw_concise_data[,"ID"] %in% IDs_to_remove_because_z),]
-               
-          ## remove tracklets with big jumps in Z values
-               ## calculate differences
-               z_distances = diff(raw_concise_data[,"Z"])
-               ## remove differences between different tracklets
-               z_distances[which(diff(raw_concise_data[,"ID"]) != 0)] = NA
-               ## identify tracklets with jumps of more than 5cm
-               IDs_to_remove_because_of_z_diff = raw_concise_data[which(z_distances >= 50),"ID"]
-               ## remove them
-               if (length(IDs_to_remove_because_of_z_diff) > 0) {raw_concise_data = raw_concise_data[-which(raw_concise_data[,"ID"] %in% IDs_to_remove_because_of_z_diff),]}
-               
-               
-          ## export new dataframe to txt
-          write.table(raw_concise_data, file=paste(dir_data,"05102022_data_collection_0003_concise_data.txt", sep=""), sep="\t")
+          runner_raw_concise_data = m.concise.dataframe(runner_raw_data)
           
           ## remove objects to free up space
-          rm(raw_concise_data)
-          rm(raw_data)
+          rm(runner_raw_data)
+          
+          ## calculate distances 
+          runner_raw_concise_data = distance.calculator(runner_raw_concise_data)
+          
+          ## remove tracklets with too high/low Z values
+          ## use Z values of the trail outline + 10 cm buffer
+          raw_trail_outline_data = read.table(file = paste(dir_data, "Trail_outline.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
+          clean_trail_data = m.concise.dataframe(raw_trail_outline_data); clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]; clean_trail_data = clean_trail_data[-78,]
+          ## generate cutoff values
+          low_cutoff_z = min(clean_trail_data[,"Z"]) - 100; high_cutoff_z = max(clean_trail_data[,"Z"]) + 100
+          ## extract affected IDs
+          IDs_to_remove_because_z = unique(runner_raw_concise_data[which(runner_raw_concise_data[,"Z"] <= low_cutoff_z | runner_raw_concise_data[,"Z"] >= high_cutoff_z),][,"ID"])
+          ## remove affected IDs
+          if (length(IDs_to_remove_because_z) > 0) {runner_raw_concise_data = runner_raw_concise_data[-which(runner_raw_concise_data[,"ID"] %in% IDs_to_remove_because_z),]}
+          
+          ## remove tracklets with big jumps in Z values
+          ## calculate differences
+          z_distances = diff(runner_raw_concise_data[,"Z"])
+          ## remove differences between different tracklets
+          z_distances[which(diff(runner_raw_concise_data[,"ID"]) != 0)] = NA
+          ## identify tracklets with jumps of more than 5cm
+          IDs_to_remove_because_of_z_diff = runner_raw_concise_data[which(z_distances >= 50),"ID"]
+          ## remove them
+          if (length(IDs_to_remove_because_of_z_diff) > 0) {runner_raw_concise_data = runner_raw_concise_data[-which(runner_raw_concise_data[,"ID"] %in% IDs_to_remove_because_of_z_diff),]}
+          
+          ## export new dataframe to txt
+          write.table(runner_raw_concise_data, file=paste(dir_data, paste("concise_",tsv_files[n], sep=""), sep=""), sep="\t")
+          
+          ## remove objects to free up space
+          rm(runner_raw_concise_data)
+     }
+
+          
+               
+          
+               
+               
+          
           
           # # identify camera fov
           # ## plot trail outline
@@ -437,12 +450,12 @@
           # camera_fov[,"Y"] = c(clean_trail_data[c(64,29,33,40, 35,59,27,32, 49,71,25,79, 14,3,58,46),"Y"])
           # 
           # ## export matrix
-          # write.table(camera_fov, file=paste(dir_github,"camera_fov.txt", sep=""), sep="\t")
+          # write.table(camera_fov, file=paste(dir_data,"camera_fov.txt", sep=""), sep="\t")
           # 
           # ## remove object
           # rm(camera_fov)
           
-     ## extract first and last datapoint for each tracklet ~ 12 minutes ####
+     ## extract first and last datapoint for each tracklet ####
           
           ## load data and make matrix
           concise_data = read.table(paste(dir_data,"05102022_data_collection_0003_concise_data.txt", sep="")); concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
@@ -451,14 +464,14 @@
           first_last_list = first.last.finder(concise_data)
           
           ## export short dataframes
-          write.table(first_last_list[[1]], file=paste(dir_github,"05102022_data_collection_0003_stitching_data_first.txt", sep=""), sep="\t")
-          write.table(first_last_list[[2]], file=paste(dir_github,"05102022_data_collection_0003_stitching_data_last.txt", sep=""), sep="\t")
+          write.table(first_last_list[[1]], file=paste(dir_data,"05102022_data_collection_0003_stitching_data_first.txt", sep=""), sep="\t")
+          write.table(first_last_list[[2]], file=paste(dir_data,"05102022_data_collection_0003_stitching_data_last.txt", sep=""), sep="\t")
           
      ## stitch tracklets together (5000 iterations < 3 mins) ####
           
           ## load data and make matrix for faster computation
-          stitching_data_first = read.table(paste(dir_github,"stitching_data_first.txt", sep="")) 
-          stitching_data_last = read.table(paste(dir_github,"stitching_data_last.txt", sep=""))
+          stitching_data_first = read.table(paste(dir_data,"stitching_data_first.txt", sep="")) 
+          stitching_data_last = read.table(paste(dir_data,"stitching_data_last.txt", sep=""))
           stitching_data_first = as.matrix(stitching_data_first); rownames(stitching_data_first) = NULL
           stitching_data_last = as.matrix(stitching_data_last); rownames(stitching_data_last) = NULL
           
@@ -476,7 +489,6 @@
                                                      u_y_diff_start = 1,
                                                      u_y_diff_steps = 0.1,
                                                      iterations = 5000)
-          
           
           ## extract tracks
           track_list = track.extractor(u_track_ID = seq_results[[3]])
@@ -604,7 +616,7 @@
      ## extract details for video matching ####
           
           ## load camera_fov
-          camera_fov = read.table(file = paste(dir_github, "camera_fov.txt", sep=""), sep = '\t')
+          camera_fov = read.table(file = paste(dir_data, "camera_fov.txt", sep=""), sep = '\t')
           
           ## create fovs cutoffs
           ## format low x, high x, low y, high y
@@ -757,7 +769,6 @@
                ## combine in df
                output_list_df[[k]] = data.frame("time" = runner_time,
                                                 "shape" = runner_shape)
-               
           }
      
 
