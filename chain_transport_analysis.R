@@ -301,7 +301,7 @@
                u_data[n,"distance"] = round( sqrt((as.numeric(u_data[n,"X"])-as.numeric(u_data[n+1,"X"]))^2+(as.numeric(u_data[n,"Y"])-as.numeric(u_data[n+1,"Y"]))^2),3)
           
                ## timer
-               print(round(n/nrow(u_data),4))
+               print(paste("distance: ", round(n/nrow(u_data),3), " %", sep=""))
           }
           
           ## remove distances calculated between tracklets
@@ -377,7 +377,7 @@
           
           ## remove "measured-col" from the dataframe (if necessary) and make matrix
           col_to_remove = as.numeric(which(apply(runner_raw_data, 2, function(x) sum(unique(x) == "Measured", na.rm=TRUE)) == 1))
-          runner_raw_data = as.matrix(runner_raw_data[,-col_to_remove])
+          if (sum(col_to_remove) != 0) {runner_raw_data = as.matrix(runner_raw_data[,-col_to_remove])}
           
           ## make concise data
           runner_raw_concise_data = m.concise.dataframe(runner_raw_data)
@@ -415,13 +415,6 @@
           ## remove objects to free up space
           rm(runner_raw_concise_data)
      }
-
-          
-               
-          
-               
-               
-          
           
           # # identify camera fov
           # ## plot trail outline
@@ -458,20 +451,20 @@
      ## extract first and last datapoint for each tracklet ####
           
           ## load data and make matrix
-          concise_data = read.table(paste(dir_data,"05102022_data_collection_0003_concise_data.txt", sep="")); concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
+          concise_data = read.table(paste(dir_data,"concise_Quality_check0001_04102022.tsv", sep="")); concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           
           ## extract first and last item from each tracklet
           first_last_list = first.last.finder(concise_data)
           
           ## export short dataframes
-          write.table(first_last_list[[1]], file=paste(dir_data,"05102022_data_collection_0003_stitching_data_first.txt", sep=""), sep="\t")
-          write.table(first_last_list[[2]], file=paste(dir_data,"05102022_data_collection_0003_stitching_data_last.txt", sep=""), sep="\t")
+          write.table(first_last_list[[1]], file=paste(dir_data,"Quality_check0001_04102022_stitching_data_first.txt", sep=""), sep="\t")
+          write.table(first_last_list[[2]], file=paste(dir_data,"Quality_check0001_04102022_stitching_data_last.txt", sep=""), sep="\t")
           
      ## stitch tracklets together (5000 iterations < 3 mins) ####
           
           ## load data and make matrix for faster computation
-          stitching_data_first = read.table(paste(dir_data,"stitching_data_first.txt", sep="")) 
-          stitching_data_last = read.table(paste(dir_data,"stitching_data_last.txt", sep=""))
+          stitching_data_first = read.table(paste(dir_data,"Quality_check0001_04102022_stitching_data_first.txt", sep="")) 
+          stitching_data_last = read.table(paste(dir_data,"Quality_check0001_04102022_stitching_data_last.txt", sep=""))
           stitching_data_first = as.matrix(stitching_data_first); rownames(stitching_data_first) = NULL
           stitching_data_last = as.matrix(stitching_data_last); rownames(stitching_data_last) = NULL
           
@@ -494,7 +487,7 @@
           track_list = track.extractor(u_track_ID = seq_results[[3]])
           
           ## assemble full track data
-          concise_data = read.table(paste(dir_data,"concise_data.txt", sep=""));concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
+          concise_data = read.table(paste(dir_data,"concise_Quality_check0001_04102022.tsv", sep=""));concise_data = as.matrix(concise_data); rownames(concise_data) = NULL
           track_data = track.data(u_track_ID = track_list, u_data = concise_data)
           
           ## remove tracks shorter than 10 minutes
@@ -613,6 +606,166 @@
           }
           
 ## 2. DATA ANALYSIS (WAITING TIMES) ####
+     ## how often are tracks near to each other? ####
+          
+          ## 1. ABSOULTE TIME
+          ## cut absolute time of recording in 5 min chunks
+          ## extract all tracks that fall into each chunk
+          ## compare x and y across all tracks
+          
+          ## 2. RELATIVE TIME (TRACK)
+          ## split first track into 5 min chunks
+          ## compare chunks across all other tracks
+          ## find coincidences of x and y in other tracks
+          ## repeat with track 2 (but omit track 1 on comparison)
+          
+          ## 3. SLIDING WINDOW (TRACK)
+          ## run with sliding window over track
+          ## compare time, x and y in sliding window to other tracks
+          
+          ## 4. FIRST LAST DATA
+          ## extract stitching events from tracks
+          ## use methods 1-3 on stitching events
+               ## maybe absolute time works best
+          
+          ## extract stitch events
+          stitch_extractor = function(x) {
+               
+               stitching_events = which(diff(x[,"ID"]) != 0)
+               first_track = x[stitching_events+1,]
+               last_track = x[stitching_events,]     
+               
+               return_list = list(first_track, last_track)
+               return(return_list)
+          }
+          stitch_events = lapply(track_data,function(x) stitch_extractor(x))
+          
+          stitch_events[[1]][2] 
+          
+          stitch_events[[c]][1]
+          
+          kek = vector()
+          for (n in 1:nrow(track_data[[1]])) {kek[n] = which(lapply(track_data[[2]][,"X"], function(x) abs(diff(c(x, track_data[[1]][n,"X"])))) <= 10)}
+          
+          
+          
+          
+          ## cut absolute time in chunks of 5 mins
+          chunks = seq(from=0, to = max(unlist(lapply(track_data, function(x) max(x[,"frame_number"])))), by=1500)
+          
+          ## look for first & last in first chunk
+          chunk_first = lapply(stitch_events, function(x) which(as.data.frame(x[1])[,"frame_number"] >= chunks[1] & as.data.frame(x[1])[,"frame_number"] <= chunks[2]))
+          chunk_last = lapply(stitch_events, function(x) which(as.data.frame(x[2])[,"frame_number"] >= chunks[1] & as.data.frame(x[2])[,"frame_number"] <= chunks[2]))
+          
+          ## identify tracks
+          chunk_tracks_first = which(lapply(chunk_first, function(x) sum(x))!= 0)
+          chunk_tracks_last = which(lapply(chunk_last, function(x) sum(x))!= 0)
+          tracksID_in_chunks = unique(c(chunk_tracks_first, chunk_tracks_last))
+          
+          ## extract tracks relevant in chunk
+          tracks_in_chunks = track_data[tracksID_in_chunks]
+          ## extract stic
+          
+          ## compare row one in track one across all rows in track two
+          safe = vector()
+          for(n in 1:nrow(tracks_in_chunks[[1]])){
+               
+               similar_x = which(round(tracks_in_chunks[[1]][n,"X"],0) == round(tracks_in_chunks[[2]][,"X"],0))
+               similar_x_and_y = which(round(tracks_in_chunks[[1]][n,"Y"],0) == round(tracks_in_chunks[[2]][similar_x,"Y"],0))
+               if (sum(similar_x_and_y) != 0) {similar_x_and_y_and_time = diff(tracks_in_chunks[[1]][n,"frame_number"], tracks_in_chunks[[2]][similar_x_and_y,"frame_number"])}
+               if (sum(similar_x_and_y_and_time) != 0 & sum(similar_x_and_y) != 0) {safe = c(safe,n)}
+          }
+          
+          
+          
+          
+          
+          
+          kek = 
+          
+          diff(c(tracks_in_chunks[[2]][1,"X"], tracks_in_chunks[[1]][1,"X"]))
+          
+          
+          plot(tracks_in_chunks[[1]][,"X"], tracks_in_chunks[[1]][,"Y"]) 
+          plot(tracks_in_chunks[[2]][,"X"], tracks_in_chunks[[2]][,"Y"]) 
+          
+          
+          
+          
+          for (n in 1:nrow(tracks_in_chunks[[1]])) if (round(tracks_in_chunks[[1]][n,"X"],0) == round(tracks_in_chunks[[2]][n,"X"],0)) {save = c(save,n)}
+          
+          which(round(tracks_in_chunks[[1]][,"X"],0) %in% round(tracks_in_chunks[[2]][,"X"],0))
+          which(round(tracks_in_chunks[[1]][,"Y"],0) %in% round(tracks_in_chunks[[2]][,"Y"],0))
+          which(round(tracks_in_chunks[[1]][,"frame_number"],0) %in% tracks_in_chunks[[2]][,"frame_number"])
+          
+                     
+          
+          round(do.call(rbind, tracks_in_chunks[c(2,3,4)])[,"X"],0))
+          
+          
+          
+          rbindas.data.frame(tracks_in_chunks)
+          
+          runner_x = 
+          runner_y
+          runner_time
+          
+          
+          lapply()
+          
+          
+          
+          
+          
+               ## maybe matching start and end across tracks would be enough
+          
+          
+          
+          
+     
+          
+          
+          ## make one dataframe
+          track_lengths = 
+          (track_lengths/10)/60
+          
+          
+          
+          
+          ## 60 seconds, in 0.2 steps
+          kek = seq(from=0, to=300, by=0.2)
+          (kek/10)/60
+          
+          60*5
+               
+               
+          
+
+
+          
+plot(track_data[[11]][,"X"],track_data[[11]][,"Y"])
+(nrow(track_data[[11]])/10)/60
+
+
+
+
+
+full_track_df = do.call("rbind", track_data)
+
+               
+          60 * 5
+          
+          ## 10 frames = 1 second
+          ## 60 seconds = 1 minute
+          ## video 
+                    
+          
+          * 165
+          
+          
+          
+          stoppter
+          
      ## extract details for video matching ####
           
           ## load camera_fov
@@ -699,9 +852,10 @@
                ## smooth distances
                for (m in 1:4) runner_track[,"distance"] = runmed(runner_track[,"distance"],111)
                
-               # windows(50,15)
-               # plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
-               # abline(h=log(1.5))
+               windows(50,15)
+               plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
+               plot(1:1000, log(runner_track[1:1000,"distance"]), type="l")
+               abline(h=log(1.5))
                
                ## set cutoff at 1.5mm/ds which equals 15 mm/s which equals 30% of average walking speed (https://doi.org/10.1007/s000400300001)
                walking_track = which(runner_track[,"distance"] > 1.5)
