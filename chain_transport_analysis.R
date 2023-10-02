@@ -491,7 +491,7 @@
           track_data = track.data(u_track_ID = track_list, u_data = concise_data)
           
           ## remove tracks shorter than 10 minutes
-          track_data = track_data[which(unlist(lapply(track_data,nrow)) > 6000)]
+          ## track_data = track_data[which(unlist(lapply(track_data,nrow)) > 6000)]
           
      ## testing ####
           
@@ -590,177 +590,82 @@
           ## how long are the tracks
           plot(1:length(unlist(lapply(track_data, nrow))), sort(unlist(lapply(track_data, nrow))))
           
-          # plot tracks
-          for (n in 1:length(track_data)) {
-
-               runner_track = track_data[[n]]
-               palette(RColorBrewer::brewer.pal(12, "Set3"))
-
-               ## create file for export
-               png(filename=paste("Track_",n,".png",sep=""))
-
-               plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)
-
-               ## close graphic device
-               dev.off()
-          }
+          # # plot tracks
+          # for (n in 1:length(track_data)) {
+          # 
+          #      runner_track = track_data[[n]]
+          #      palette(RColorBrewer::brewer.pal(12, "Set3"))
+          # 
+          #      ## create file for export
+          #      png(filename=paste("Track_",n,".png",sep=""))
+          # 
+          #      plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)
+          # 
+          #      ## close graphic device
+          #      dev.off()
+          # }
           
 ## 2. DATA ANALYSIS (WAITING TIMES) ####
      ## how often are tracks near to each other? ####
-          
-          ## 1. ABSOULTE TIME
-          ## cut absolute time of recording in 5 min chunks
-          ## extract all tracks that fall into each chunk
-          ## compare x and y across all tracks
-          
-          ## 2. RELATIVE TIME (TRACK)
-          ## split first track into 5 min chunks
-          ## compare chunks across all other tracks
-          ## find coincidences of x and y in other tracks
-          ## repeat with track 2 (but omit track 1 on comparison)
-          
-          ## 3. SLIDING WINDOW (TRACK)
-          ## run with sliding window over track
-          ## compare time, x and y in sliding window to other tracks
-          
-          ## 4. FIRST LAST DATA
-          ## extract stitching events from tracks
-          ## use methods 1-3 on stitching events
-               ## maybe absolute time works best
           
           ## extract stitch events
           stitch_extractor = function(x) {
                
                stitching_events = which(diff(x[,"ID"]) != 0)
-               first_track = x[stitching_events+1,]
-               last_track = x[stitching_events,]     
+               first_track = x[stitching_events+1,, drop=FALSE]
+               last_track = x[stitching_events,,drop=FALSE]     
                
                return_list = list(first_track, last_track)
                return(return_list)
           }
           stitch_events = lapply(track_data,function(x) stitch_extractor(x))
           
-          stitch_events[[1]][2] 
+          ## make master matrix for last
+          stitch_last = matrix(nrow=0, ncol=length(colnames(as.matrix(as.data.frame(stitch_events[[1]][2])))),dimnames = list(NULL,colnames(as.matrix(as.data.frame(stitch_events[[1]][2])))))
+          for(n in 1:length(stitch_events)) stitch_last = rbind(stitch_last, as.data.frame(stitch_events[[n]][2]))
           
-          stitch_events[[c]][1]
+          ## make master matrix for first
+          stitch_first = matrix(nrow=0, ncol=length(colnames(as.matrix(as.data.frame(stitch_events[[1]][2])))),dimnames = list(NULL,colnames(as.matrix(as.data.frame(stitch_events[[1]][2])))))
+          for(n in 1:length(stitch_events)) stitch_first = rbind(stitch_first, as.matrix(as.data.frame(stitch_events[[n]][2])))
           
-          kek = vector()
-          for (n in 1:nrow(track_data[[1]])) {kek[n] = which(lapply(track_data[[2]][,"X"], function(x) abs(diff(c(x, track_data[[1]][n,"X"])))) <= 10)}
-          
-          
-          
-          
-          ## cut absolute time in chunks of 5 mins
-          chunks = seq(from=0, to = max(unlist(lapply(track_data, function(x) max(x[,"frame_number"])))), by=1500)
-          
-          ## look for first & last in first chunk
-          chunk_first = lapply(stitch_events, function(x) which(as.data.frame(x[1])[,"frame_number"] >= chunks[1] & as.data.frame(x[1])[,"frame_number"] <= chunks[2]))
-          chunk_last = lapply(stitch_events, function(x) which(as.data.frame(x[2])[,"frame_number"] >= chunks[1] & as.data.frame(x[2])[,"frame_number"] <= chunks[2]))
-          
-          ## identify tracks
-          chunk_tracks_first = which(lapply(chunk_first, function(x) sum(x))!= 0)
-          chunk_tracks_last = which(lapply(chunk_last, function(x) sum(x))!= 0)
-          tracksID_in_chunks = unique(c(chunk_tracks_first, chunk_tracks_last))
-          
-          ## extract tracks relevant in chunk
-          tracks_in_chunks = track_data[tracksID_in_chunks]
-          ## extract stic
-          
-          ## compare row one in track one across all rows in track two
-          safe = vector()
-          for(n in 1:nrow(tracks_in_chunks[[1]])){
+          ## workhorse
+          summary_list = vector(mode="list", length=length(unique(stitch_last[,"ID_track"])))
+          for (n in 1:length(unique(stitch_last[,"ID_track"]))) {
                
-               similar_x = which(round(tracks_in_chunks[[1]][n,"X"],0) == round(tracks_in_chunks[[2]][,"X"],0))
-               similar_x_and_y = which(round(tracks_in_chunks[[1]][n,"Y"],0) == round(tracks_in_chunks[[2]][similar_x,"Y"],0))
-               if (sum(similar_x_and_y) != 0) {similar_x_and_y_and_time = diff(tracks_in_chunks[[1]][n,"frame_number"], tracks_in_chunks[[2]][similar_x_and_y,"frame_number"])}
-               if (sum(similar_x_and_y_and_time) != 0 & sum(similar_x_and_y) != 0) {safe = c(safe,n)}
+               ## progress bar
+               print(round(n/length(unique(stitch_last[,"ID_track"])),4)*100)
+               
+               ## track IDs
+               track_IDs = unique(stitch_last[,"ID_track"])
+               
+               ## extract first track
+               runner_last = stitch_last[which(stitch_last[,"ID_track"] == track_IDs[n]),]
+               
+               ## find cases where x,y,t are similar between runner_last and all firsts
+               similar_x = vector(mode="list", length(nrow(runner_last)))
+               similar_y = vector(mode="list", length(nrow(runner_last)))
+               similar_t = vector(mode="list", length(nrow(runner_last)))
+               
+               for(m in 1:nrow(runner_last)) similar_x[[m]] = which(lapply(stitch_first[,"X"],function(x) abs(as.numeric(x)-as.numeric(runner_last[m,"X"]))) <= 100)
+               for(m in 1:nrow(runner_last)) similar_y[[m]] = which(lapply(stitch_first[,"Y"],function(x) abs(as.numeric(x)-as.numeric(runner_last[m,"Y"]))) <= 100)
+               for(m in 1:nrow(runner_last)) similar_t[[m]] = which(lapply(stitch_first[,"frame_number"],function(x) abs(as.numeric(x)-as.numeric(runner_last[m,"frame_number"]))) <= 100)
+               
+               ## find intersection between x,y,t
+               candidates = vector(mode="list", length(nrow(runner_last)))
+               for(m in 1:nrow(runner_last)) candidates[[m]] = intersect(similar_x[[m]], intersect(similar_y[[m]], similar_t[[m]]))
+               
+               ## exclude correct stitching
+               candidates_matrix = vector(mode="list", length(nrow(runner_last)))
+               for(m in 1:nrow(runner_last)) candidates_matrix[[m]] = stitch_first[intersect(similar_x[[m]], intersect(similar_y[[m]], similar_t[[m]])),, drop=FALSE]
+               summary_list[[n]] = which(lapply(lapply(candidates_matrix, function(x) x[,"ID_track"] != unique(runner_last[,"ID_track"])), sum) > 1)
+               
           }
           
+          tracks_without_conflict = which(unlist(lapply(summary_list,sum)) == 0)
           
+          plot(track_data[[81]][,"X"], track_data[[81]][,"Y"])
+          points(track_data[[10]][,"X"], track_data[[10]][,"Y"])
           
-          
-          
-          
-          kek = 
-          
-          diff(c(tracks_in_chunks[[2]][1,"X"], tracks_in_chunks[[1]][1,"X"]))
-          
-          
-          plot(tracks_in_chunks[[1]][,"X"], tracks_in_chunks[[1]][,"Y"]) 
-          plot(tracks_in_chunks[[2]][,"X"], tracks_in_chunks[[2]][,"Y"]) 
-          
-          
-          
-          
-          for (n in 1:nrow(tracks_in_chunks[[1]])) if (round(tracks_in_chunks[[1]][n,"X"],0) == round(tracks_in_chunks[[2]][n,"X"],0)) {save = c(save,n)}
-          
-          which(round(tracks_in_chunks[[1]][,"X"],0) %in% round(tracks_in_chunks[[2]][,"X"],0))
-          which(round(tracks_in_chunks[[1]][,"Y"],0) %in% round(tracks_in_chunks[[2]][,"Y"],0))
-          which(round(tracks_in_chunks[[1]][,"frame_number"],0) %in% tracks_in_chunks[[2]][,"frame_number"])
-          
-                     
-          
-          round(do.call(rbind, tracks_in_chunks[c(2,3,4)])[,"X"],0))
-          
-          
-          
-          rbindas.data.frame(tracks_in_chunks)
-          
-          runner_x = 
-          runner_y
-          runner_time
-          
-          
-          lapply()
-          
-          
-          
-          
-          
-               ## maybe matching start and end across tracks would be enough
-          
-          
-          
-          
-     
-          
-          
-          ## make one dataframe
-          track_lengths = 
-          (track_lengths/10)/60
-          
-          
-          
-          
-          ## 60 seconds, in 0.2 steps
-          kek = seq(from=0, to=300, by=0.2)
-          (kek/10)/60
-          
-          60*5
-               
-               
-          
-
-
-          
-plot(track_data[[11]][,"X"],track_data[[11]][,"Y"])
-(nrow(track_data[[11]])/10)/60
-
-
-
-
-
-full_track_df = do.call("rbind", track_data)
-
-               
-          60 * 5
-          
-          ## 10 frames = 1 second
-          ## 60 seconds = 1 minute
-          ## video 
-                    
-          
-          * 165
           
           
           
