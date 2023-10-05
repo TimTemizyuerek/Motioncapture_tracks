@@ -11,6 +11,7 @@
 
      ## paths
      dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport/pfolder/"
+     dir_raw = "C:/Users/timte/Desktop/Konstanz/Chain transport/pfolder/raw data/"
      # dir_github = "C:/Users/timte/Desktop/Konstanz/Chain transport/Github repository/"
      
      ## custom functions
@@ -357,14 +358,14 @@
      }
           
      
-## 1. DATA PREPARATION (LOADING, TRANSFORMATION, STITCHING) ####
+## 1. DATA PREPARATION (LOADING, TRANSFORMATION, STITCHING) ----------------####
      ## load raw data and transform to concise matrix ####
      
      ## raw_data = read.table(file = paste(dir_data, "Quality_check0001_04102022.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
      ## raw_data = read.table(file = paste(dir_data, "07102022_data_collection_0001.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
      
      ## automate for several files
-     tsv_files = list.files(dir_data, pattern=".tsv")
+     tsv_files = list.files(dir_raw, pattern=".tsv")
      
      ## loop through files
      for (n in 1:length(tsv_files)) {
@@ -373,7 +374,7 @@
           print(paste("processing file ", n, " out of", length(tsv_files)), sep="")
           
           ## load file
-          runner_raw_data = read.table(file = paste(dir_data, tsv_files[n], sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+          runner_raw_data = read.table(file = paste(dir_raw, tsv_files[n], sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
           
           ## remove "measured-col" from the dataframe (if necessary) and make matrix
           col_to_remove = as.numeric(which(apply(runner_raw_data, 2, function(x) sum(unique(x) == "Measured", na.rm=TRUE)) == 1))
@@ -408,6 +409,14 @@
           IDs_to_remove_because_of_z_diff = runner_raw_concise_data[which(z_distances >= 50),"ID"]
           ## remove them
           if (length(IDs_to_remove_because_of_z_diff) > 0) {runner_raw_concise_data = runner_raw_concise_data[-which(runner_raw_concise_data[,"ID"] %in% IDs_to_remove_because_of_z_diff),]}
+          
+          ## trim tracklets to remove what is under the cafeteria (first camera fov)
+          first_camera_fov = clean_trail_data[c(29,33,40,64),]
+          points_under_first_camera = which(runner_raw_concise_data[,"X"] >= first_camera_fov[4,"X"] &
+                                            runner_raw_concise_data[,"X"] <= first_camera_fov[1,"X"] &
+                                            runner_raw_concise_data[,"Y"] >= first_camera_fov[3,"Y"] &
+                                            runner_raw_concise_data[,"Y"] <= first_camera_fov[4,"Y"])
+          runner_raw_concise_data = runner_raw_concise_data[-points_under_first_camera,]
           
           ## export new dataframe to txt
           write.table(runner_raw_concise_data, file=paste(dir_data, paste("concise_",tsv_files[n], sep=""), sep=""), sep="\t")
@@ -605,7 +614,7 @@
           #      dev.off()
           # }
           
-## 2. DATA ANALYSIS (WAITING TIMES) ####
+## 2. DATA ANALYSIS (WAITING TIMES) ----------------------------------------####
      ## how often are tracks near to each other? ####
           
           ## extract stitch events
@@ -669,7 +678,7 @@
           
           
           
-          stoppter
+          stopper
           
      ## extract details for video matching ####
           
@@ -781,7 +790,7 @@
           }
           
           
-## 3. Video data ####
+## 3. Video data -----------------------------------------------------------####
      ## load and handle data ####
      
      ## load raw data
@@ -833,7 +842,7 @@
 
      
      
-## 4. ARCHIVE ####
+## 4. ARCHIVE --------------------------------------------------------------####
      ## plotter ####
      
      # plot tracks
