@@ -106,7 +106,7 @@
      fragment.stitcher = function (u_first, u_last, u_track_ID, u_time_window, u_x_diff, u_y_diff) {
        
           ## for testing
-          # u_first = seq_results[[1]]; u_last = seq_results[[2]]; u_track_ID = seq_results[[3]]; u_time_window = 10; u_x_diff = 10; u_y_diff = 10
+          # u_first = stitching_data_first; u_last = stitching_data_last;  u_time_window = 100; u_x_diff = 100; u_y_diff = 100
           
           ## variables for the while loop
           proceed = TRUE
@@ -128,6 +128,27 @@
                ## select all rows differ less than u_y_diff units on Y
                runner_candidate_time_x_y = runner_candidate_time_x[which((abs(runner_candidate_time_x[,"Y"] - as.numeric(runner_endpoint[,"Y"]))) <= u_y_diff),, drop=FALSE]
                
+               ## other starting points next to my candidates?
+               if (nrow(runner_candidate_time_x_y) > 0 ) {
+                    
+                    similar_x = vector(mode="list", length(nrow(runner_candidate_time_x_y)))
+                    similar_y = vector(mode="list", length(nrow(runner_candidate_time_x_y)))
+                    similar_t = vector(mode="list", length(nrow(runner_candidate_time_x_y)))
+                    
+                    ## Are there additional tracklet starts in list of starts?
+                    for(m in 1:nrow(runner_candidate_time_x_y)) similar_x[[m]] = which(lapply(u_first[,"X"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[m,"X"]))) <= 100)
+                    for(m in 1:nrow(runner_candidate_time_x_y)) similar_y[[m]] = which(lapply(u_first[,"Y"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[m,"Y"]))) <= 100)
+                    for(m in 1:nrow(runner_candidate_time_x_y)) similar_t[[m]] = which(lapply(u_first[,"frame_number"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[m,"frame_number"]))) <= 100)
+                    
+                    ## find intersection between x,y,t
+                    candidates = vector(mode="list", length(nrow(runner_candidate_time_x_y)))
+                    for(m in 1:nrow(runner_candidate_time_x_y)) candidates[[m]] = intersect(similar_x[[m]], intersect(similar_y[[m]], similar_t[[m]]))
+                    
+                    ## exclude tracklets which have other tracklets close by
+                    runner_candidate_time_x_y = runner_candidate_time_x_y[which(unlist(lapply(candidates,sum)) == 0),,drop = FALSE]
+
+               }
+                
                ## if one tracklet left: stitch
                if (nrow(runner_candidate_time_x_y) == 1) {
                     
@@ -490,7 +511,7 @@
                                                      u_x_diff_steps = 0.1,
                                                      u_y_diff_start = 1,
                                                      u_y_diff_steps = 0.1,
-                                                     iterations = 5000)
+                                                     iterations = 3000)
           
           ## extract tracks
           track_list = track.extractor(u_track_ID = seq_results[[3]])
