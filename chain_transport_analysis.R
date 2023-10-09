@@ -128,27 +128,21 @@
                ## select all rows differ less than u_y_diff units on Y
                runner_candidate_time_x_y = runner_candidate_time_x[which((abs(runner_candidate_time_x[,"Y"] - as.numeric(runner_endpoint[,"Y"]))) <= u_y_diff),, drop=FALSE]
                
-               ## other starting points next to my candidates?
-               if (nrow(runner_candidate_time_x_y) > 0 ) {
+               ## if one tracklet, check for others close by
+               if (nrow(runner_candidate_time_x_y) == 1) {
                     
-                    similar_x = vector(mode="list", length(nrow(runner_candidate_time_x_y)))
-                    similar_y = vector(mode="list", length(nrow(runner_candidate_time_x_y)))
-                    similar_t = vector(mode="list", length(nrow(runner_candidate_time_x_y)))
-                    
-                    ## Are there additional tracklet starts in list of starts?
-                    for(m in 1:nrow(runner_candidate_time_x_y)) similar_x[[m]] = which(lapply(u_first[,"X"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[m,"X"]))) <= 100)
-                    for(m in 1:nrow(runner_candidate_time_x_y)) similar_y[[m]] = which(lapply(u_first[,"Y"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[m,"Y"]))) <= 100)
-                    for(m in 1:nrow(runner_candidate_time_x_y)) similar_t[[m]] = which(lapply(u_first[,"frame_number"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[m,"frame_number"]))) <= 100)
+                    ## Are there additional tracklet starts next to my candidate?
+                    runner_similar_x = which(lapply(u_first[,"X"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[,"X"]))) <= 100)
+                    runner_similar_y = which(lapply(u_first[,"Y"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[,"Y"]))) <= 100)
+                    runner_similar_t = which(lapply(u_first[,"frame_number"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[,"frame_number"]))) <= 100)
                     
                     ## find intersection between x,y,t
-                    candidates = vector(mode="list", length(nrow(runner_candidate_time_x_y)))
-                    for(m in 1:nrow(runner_candidate_time_x_y)) candidates[[m]] = intersect(similar_x[[m]], intersect(similar_y[[m]], similar_t[[m]]))
+                    candidate = intersect(runner_similar_x, intersect(runner_similar_y, runner_similar_t))
                     
-                    ## exclude tracklets which have other tracklets close by
-                    runner_candidate_time_x_y = runner_candidate_time_x_y[which(unlist(lapply(candidates,sum)) == 0),,drop = FALSE]
-
+                    ## remove candidate
+                    if (sum(candidate) != 0) {runner_candidate_time_x_y = runner_candidate_time_x_y[-1,,drop=FALSE]}
                }
-                
+               
                ## if one tracklet left: stitch
                if (nrow(runner_candidate_time_x_y) == 1) {
                     
