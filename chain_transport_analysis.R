@@ -101,6 +101,39 @@
           return(resturn_list)
      }
      
+     ## takes first-data and removes tracklets that start too close to each other
+     ## produces: vector or tracklets with close starting points
+     stitch.conflict.remover = function(u_first, u_x, u_y, u_t){
+          
+          ## output vector
+          tracklets_to_remove = vector()
+          
+          ## run through u_first
+          for (n in 1:nrow(u_first)) {
+               
+               ## progressbar
+               print((n/nrow(u_first)))
+               
+               ## take nth tracklet
+               runner_tracklet = u_first[n,,drop=FALSE]
+               
+               ## check if others start close by for x,y and time
+               similar_x = which(lapply(u_first[,"X"],function(x) abs(as.numeric(x)-as.numeric(runner_tracklet[,"X"]))) <= u_x)
+               similar_y = which(lapply(u_first[,"Y"],function(x) abs(as.numeric(x)-as.numeric(runner_tracklet[,"Y"]))) <= u_y)
+               similar_t = which(lapply(u_first[,"frame_number"],function(x) abs(as.numeric(x)-as.numeric(runner_tracklet[,"frame_number"]))) <= u_t)
+               
+               ## find intersection between x,y,t
+               conflicts = intersect(similar_x, intersect(similar_y, similar_t))
+               
+               ## if conflicts, add to removal list
+               if (length(conflicts) > 1) {tracklets_to_remove = c(tracklets_to_remove, as.numeric(runner_tracklet[,"ID"]))}
+               
+          }
+          
+          return(tracklets_to_remove)
+          
+     }
+     
      ## finds candidates for fragment stitching
      ## produces: first- and last-data matrix, list with stitched tracks
      fragment.stitcher = function (u_first, u_last, u_track_ID, u_time_window, u_x_diff, u_y_diff) {
@@ -128,20 +161,17 @@
                ## select all rows differ less than u_y_diff units on Y
                runner_candidate_time_x_y = runner_candidate_time_x[which((abs(runner_candidate_time_x[,"Y"] - as.numeric(runner_endpoint[,"Y"]))) <= u_y_diff),, drop=FALSE]
                
-               ## if one tracklet, check for others close by
-               if (nrow(runner_candidate_time_x_y) == 1) {
-                    
-                    ## Are there additional tracklet starts next to my candidate?
-                    runner_similar_x = which(lapply(u_first[,"X"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[,"X"]))) <= 100)
-                    runner_similar_y = which(lapply(u_first[,"Y"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[,"Y"]))) <= 100)
-                    runner_similar_t = which(lapply(u_first[,"frame_number"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[,"frame_number"]))) <= 100)
-                    
-                    ## find intersection between x,y,t
-                    candidate = intersect(runner_similar_x, intersect(runner_similar_y, runner_similar_t))
-                    
-                    ## remove candidate
-                    if (sum(candidate) != 0) {runner_candidate_time_x_y = runner_candidate_time_x_y[-1,,drop=FALSE]}
-               }
+               # ## also too slow . . .
+               # ## if one tracklet, check for others close by
+               # if (nrow(runner_candidate_time_x_y) == 1) {
+               # 
+               #      ## Are there additional tracklet starts next to my candidate?
+               #      if (sum(intersect(which(lapply(u_first[,"X"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[,"X"]))) <= 100),
+               #                intersect(which(lapply(u_first[,"Y"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[,"Y"]))) <= 100),
+               #                          which(lapply(u_first[,"frame_number"],function(x) abs(as.numeric(x)-as.numeric(runner_candidate_time_x_y[,"frame_number"]))) <= 100)))) != 0)
+               #      {runner_candidate_time_x_y = runner_candidate_time_x_y[-1,,drop=FALSE]}
+               #      
+               # }
                
                ## if one tracklet left: stitch
                if (nrow(runner_candidate_time_x_y) == 1) {
@@ -492,6 +522,13 @@
           stitching_data_first = as.matrix(stitching_data_first); rownames(stitching_data_first) = NULL
           stitching_data_last = as.matrix(stitching_data_last); rownames(stitching_data_last) = NULL
           
+          ## identify tracklets to remove
+          tracklets_to_remove = stitch.conflict.remover(u_first = stitching_data_first,
+                                                        u_x = 100, u_y = 100, u_t = 100)
+          ## remove tracklets with potential conflicts
+          stitching_data_first = stitching_data_first[-which(stitching_data_first[,"ID"] %in% tracklets_to_remove),]
+          stitching_data_last = stitching_data_last[-which(stitching_data_last[,"ID"] %in% tracklets_to_remove),]
+          
           ## list for track_IDs
           track_ID = vector(mode='list', length=max(unique(stitching_data_last[,"ID"])))
           
@@ -505,7 +542,7 @@
                                                      u_x_diff_steps = 0.1,
                                                      u_y_diff_start = 1,
                                                      u_y_diff_steps = 0.1,
-                                                     iterations = 3000)
+                                                     iterations = 5000)
           
           ## extract tracks
           track_list = track.extractor(u_track_ID = seq_results[[3]])
@@ -685,7 +722,7 @@
                
           }
           
-          tracks_without_conflict = which(unlist(lapply(summary_list,sum)) == 0)
+          tracks_with_conflict = which(unlist(lapply(summary_list,sum)) != 0)
           
           plot(track_data[[81]][,"X"], track_data[[81]][,"Y"])
           points(track_data[[10]][,"X"], track_data[[10]][,"Y"])
