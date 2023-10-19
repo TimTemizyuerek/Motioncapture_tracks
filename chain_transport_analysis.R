@@ -359,19 +359,19 @@
      }
      
      ## checks if tracks are under camera returns time spans in minutes
-     ## produces matrix with camera times
+     ## produces matrix with camera times (also an warning which can be ignored)
      under.camera = function(u_track_data, u_camera_cutoff) {
           
           ## output list
-          final_output = matrix(nrow = length(unique(u_track_data[,"ID"])), ncol=9) 
+          final_output = matrix(nrow = length(unique(u_track_data[,"ID_track"])), ncol=9) 
           colnames(final_output) = c("track_ID", "c1_start", "c1_end", "c2_start", "c2_end",
                                      "c3_start", "c3_end", "c4_start", "c4_end")
           
-          for (n in 1:length(unique(u_track_data[,"ID"]))) {
+          for (n in 1:length(unique(u_track_data[,"ID_track"]))) {
                
                ## list IDs and pick tracks one by one
-               track_IDs = unique(u_track_data[,"ID"])
-               runner_track = u_track_data[which(u_track_data[,"ID"] == track_IDs[n]),]
+               track_IDs = unique(u_track_data[,"ID_track"])
+               runner_track = u_track_data[which(u_track_data[,"ID_track"] == track_IDs[n]),]
                
                ## test for cameras
                camera_one = which(runner_track[,"X"] >= u_camera_cutoff[[1]][1] & runner_track[,"X"] <= u_camera_cutoff[[1]][2] &
@@ -459,16 +459,19 @@
      ## load raw data and transform to concise matrix ####
      
           ## automate for several files
-          raw_files = list.files(dir_raw, pattern="raw.tsv")
+          data_names = substr(list.files(dir_raw, pattern=".tsv"),1,nchar(list.files(dir_raw, pattern=".tsv"))-4)
           
           ## loop through files
-          for (n in 1:length(raw_files)) {
+          for (n in 1:length(data_names)) {
                
                ## print process
-               print(paste("processing file ", n, " out of", length(raw_files)), sep="")
-                    
+               print(paste("processing file ", n, " out of", length(data_names)), sep="")
+                
+               ## generate filename    
+               runner_filename = paste(dir_raw,data_names[n],".tsv", sep="")
+               
                ## load file
-               runner_raw_data = read.table(file = paste(dir_raw, raw_files[n], sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE)
+               runner_raw_data = read.table(file = runner_filename, sep = '\t', header=FALSE, skip=12, fill=FALSE)
                     
                ## remove "measured-col" from the dataframe (if necessary) and make matrix
                col_to_remove = as.numeric(which(apply(runner_raw_data, 2, function(x) sum(unique(x) == "Measured", na.rm=TRUE)) == 1))
@@ -503,7 +506,7 @@
                
                ## trim tracklets to remove what is under the cafeteria (first camera fov)
                first_camera_fov = clean_trail_data[c(29,33,40,64),]
-               points_under_first_camera = which(runner_raw_concise_data[,"X"] >= first_camera_fov[4,"X"] &
+               points_under_first_camera = which(runner_raw_concise_data[,"X"] >= (first_camera_fov[4,"X"]+30) & ## add 3cm so that they show up for video watching
                                                  runner_raw_concise_data[,"X"] <= first_camera_fov[1,"X"] &
                                                  runner_raw_concise_data[,"Y"] >= first_camera_fov[3,"Y"] &
                                                  runner_raw_concise_data[,"Y"] <= first_camera_fov[4,"Y"])
@@ -513,7 +516,7 @@
                runner_raw_concise_data = distance.calculator(runner_raw_concise_data)
                
                ## export new dataframe to txt
-               write.table(runner_raw_concise_data, file=paste(dir_raw, paste(substr(raw_files[n],1,nchar(raw_files[n])-8),"_concise.txt",sep=""), sep=""), sep="\t")
+               write.table(runner_raw_concise_data, file=paste(dir_raw, paste(data_names[n],"_concise.txt",sep=""), sep=""), sep="\t")
                
                ## remove objects to free up space
                rm(runner_raw_concise_data)
@@ -521,45 +524,44 @@
           
      ## extract first and last datapoint for each tracklet ####
           
-          ## automate for several files
-          concise_files = list.files(dir_raw, pattern="concise.txt")
-          
           ## loop through files
-          for (n in 1:length(concise_files)) {
+          for (n in 1:length(data_names)) {
                
                ## print process
-               print(paste("processing file ", n, " out of", length(concise_files)), sep="")
+               print(paste("processing file ", n, " out of", length(data_names)), sep="")
+               
+               ## generate filename
+               runner_filename = paste(dir_raw,data_names[n],"_concise.txt", sep="") 
                
                ## one by one
-               runner_concise_data = read.table(paste(dir_raw,concise_files[n], sep="")) 
+               runner_concise_data = read.table(runner_filename) 
                
                ## extract first and last item from each tracklet
                runner_first_last_list = first.last.finder(runner_concise_data)
                
                ## export short dataframes
-               write.table(runner_first_last_list[[1]], file=paste(dir_raw,substr(concise_files[n],1,nchar(concise_files[n])-12),"_first.txt", sep=""), sep="\t")
-               write.table(runner_first_last_list[[2]], file=paste(dir_raw,substr(concise_files[n],1,nchar(concise_files[n])-12),"_last.txt", sep=""), sep="\t")
+               write.table(runner_first_last_list[[1]], file=paste(dir_raw,data_names[n],"_first.txt", sep=""), sep="\t")
+               write.table(runner_first_last_list[[2]], file=paste(dir_raw,data_names[n],"_last.txt", sep=""), sep="\t")
      
           }
      
      ## stitch tracklets together (5000 iterations < 3 mins) ####
 
-          ## get filenames
-          concise_files = list.files(dir_raw, pattern="concise.txt")
-          first_files = list.files(dir_raw, pattern="first.txt")
-          last_files = list.files(dir_raw, pattern="last.txt")
-          
           ## workhorse
-          for (n in 1:length(first_files)) {
+          for (n in 1:length(data_names)) {
+               
+               ## make filename
+               runner_filename_first = paste(dir_raw,data_names[n],"_first.txt", sep="")
+               runner_filename_last = paste(dir_raw,data_names[n],"_last.txt", sep="")
                
                ## load data and make matrix for faster computation
-               runner_first = read.table(paste(dir_raw,first_files[n], sep="")) 
-               runner_last = read.table(paste(dir_raw,last_files[n], sep=""))
+               runner_first = read.table(runner_filename_first) 
+               runner_last = read.table(runner_filename_last)
                runner_first = as.matrix(runner_first); rownames(runner_first) = NULL
                runner_last = as.matrix(runner_last); rownames(runner_last) = NULL
                
                ## remove tracklets with potential conflicts
-               tracklets_to_remove = stitch.conflict.remover(u_first = runner_first, u_x = 100, u_y = 100, u_t = 100)
+               tracklets_to_remove = stitch.conflict.remover(u_first = runner_first, u_x = 10, u_y = 10, u_t = 10)
                runner_first = runner_first[-which(runner_first[,"ID"] %in% tracklets_to_remove),]
                runner_last = runner_last[-which(runner_last[,"ID"] %in% tracklets_to_remove),]
                
@@ -582,7 +584,7 @@
                track_list = track.extractor(u_track_ID = seq_results[[3]])
                
                ## assemble full track data
-               runner_concise_data = read.table(paste(dir_raw,concise_files[n], sep=""));
+               runner_concise_data = read.table(paste(dir_raw,data_names[n],"_concise.txt", sep=""))
                runner_concise_data = as.matrix(runner_concise_data); rownames(runner_concise_data) = NULL
                runner_track_data = track.data(u_track_ID = track_list, u_data = runner_concise_data)
                
@@ -594,18 +596,9 @@
                ## track_matrix = track_matrix[which(unlist(lapply(track_matrix,nrow)) > 3000)]
                
                ## export tracks
-               write.table(track_matrix, file=paste(dir_raw,substr(concise_files[n],1,nchar(concise_files[n])-12),"_track.txt", sep=""), sep="\t")
+               write.table(track_matrix, file=paste(dir_raw,data_names[n],"_track.txt", sep=""), sep="\t")
                
           }
-     
-     ## plot tracks ####
-       
-          ## load files
-          track_files = list.files(dir_raw, pattern="track.txt")
-          
-          ## 
-          substr(concise_files[1],1,nchar(concise_files[1])-12)
-          
      
      ## track camera matching ####
           
@@ -620,7 +613,7 @@
           camera_cutoff[[3]] = c(3500, 4500, 4350, 5400)
           camera_cutoff[[4]] = c(-1850, -400, 8020, 8410)
           
-          matcher = vector(mode='list', length=3)
+          tracks_under_cameras = vector(mode='list', length=3)
           
           ## workhorse
           for (n in 1:length(track_files)) {
@@ -629,17 +622,12 @@
                runner_track = read.table(paste(dir_raw,track_files[n], sep=""))  
                
                ## find camera track matches and store in list
-               matcher[[n]] = under.camera(runner_track, camera_cutoff)
+               runner_camera_df = under.camera(runner_track, camera_cutoff)
                
+               ## remove tracks without camera picture
+               tracks_under_cameras[[n]] = runner_camera_df[which(apply(runner_camera_df[,c(2:9)],1, function(x) sum(x, na.rm = TRUE)) != 0),]
+                    
           }
-          
-          
-          
-          
-          ## identify tracks that fall under camera
-          number_of_cameras_per_track = lapply(under_camera, function(x) (sum(is.infinite(unlist(x)) == FALSE)/2))
-          usable_tracks = which(number_of_cameras_per_track != 0)
-          
           
           
           
@@ -879,15 +867,15 @@
      ## load and handle data ####
      
      ## load raw data
-     video_data = read.table(file = paste("C:/Users/timte/Desktop/Konstanz/Chain transport/Erik/master/Ant_Trail_20221007/master_file_3_20221007.txt"),sep = '\t', header=TRUE, fill=FALSE)
+     video_data = read.table(file = "C:/Users/timte/Desktop/Konstanz/Chain transport/Erik/master/Ant_Trail_20221013/master_file_2_20221013.txt",sep = '\t', header=TRUE, fill=FALSE)
 
      ## transform master file into convenient table for matching to tracks
           
           ## create list for split dataframes
-          runner_dfs = vector(mode="list", length=3)
+          runner_dfs = vector(mode="list", length=2)
           
           ## extract brakes
-          breaks = which(video_data[,10] == "BREAK")
+          breaks = which(video_data[,1] == "BREAK")
           
           ## split dataframes
           if (length(breaks) == 0) { runner_dfs[[1]] = video_data
@@ -912,17 +900,30 @@
                runner = runner_dfs[[k]][,c(1,shape_by_col[[k]])]
                
                ## extract entry time
-               runner_time =  runner[as.numeric(apply(runner[,2:ncol(runner)], 2, function(x) which(x == "ENTER_RIGHT"))),"Time"]
+               runner_entry_time =  runner[as.numeric(apply(runner[,2:ncol(runner)], 2, function(x) which(x == "ENTER_RIGHT"))),"Time"]
+               runner_entry_time = runner_entry_time[!is.na(runner_entry_time)]
+               
+               ## find cols with "ENTER_RIGHT"
+               cols_with_enter_right = names(which(apply(runner[,2:ncol(runner)], 2, function(x) which(x == "ENTER_RIGHT")) != 0))
+               
+               ## extract exit time
+               runner_exit_time = runner[as.numeric(apply(runner[,cols_with_enter_right], 2, function(x) which(x == "EXIT_LEFT"))),"Time"]
+               runner_exit_time = runner_exit_time[!is.na(runner_exit_time)]
                
                ## extract shape
-               runner_shape = runner[apply(runner[,2:ncol(runner)], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE"))),2:ncol(runner)]
+               runner_shape = runner[unique(apply(runner[,cols_with_enter_right], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE")))),cols_with_enter_right]
                runner_shape = as.vector(unlist(runner_shape)[which(unlist(runner_shape) != "")])
                runner_shape = runner_shape[which(runner_shape %in% c("STAR", "HEART", "CIRCLE"))]
                
-               ## combine in df
-               output_list_df[[k]] = data.frame("time" = runner_time,
-                                                "shape" = runner_shape)
+               ## combine in df and transform to minutes
+               output_list_df[[k]] = data.frame("entry_time" = runner_entry_time*0.00333,
+                                                "shape" = runner_shape,
+                                                "exit_time" = runner_exit_time*0.00333)
           }
+          
+          ## to match
+          tracks_under_cameras[[3]]
+          output_list_df[[1]]
      
 
      
