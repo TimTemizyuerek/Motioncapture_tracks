@@ -569,39 +569,47 @@
                runner_first = runner_first[-which(runner_first[,"ID"] %in% tracklets_to_remove),]
                runner_last = runner_last[-which(runner_last[,"ID"] %in% tracklets_to_remove),]
                
-               ## list for track_IDs
-               runner_track_ID = vector(mode='list', length=max(unique(runner_last[,"ID"])))
+               if (nrow(runner_last) != 0) {
                
-               ## sequential stitching
-               seq_results = sequential.fragment.stitcher(u_first = runner_first,
-                                                          u_last = runner_last,
-                                                          u_track_ID = runner_track_ID,
-                                                          u_time_window_start = 1,
-                                                          u_time_window_steps = 0.1,
-                                                          u_x_diff_start = 1,
-                                                          u_x_diff_steps = 0.1,
-                                                          u_y_diff_start = 1,
-                                                          u_y_diff_steps = 0.1,
-                                                          iterations = 5000)
+                    ## list for track_IDs
+                    runner_track_ID = vector(mode='list', length=max(unique(runner_last[,"ID"])))
+                    
+                    ## sequential stitching
+                    seq_results = sequential.fragment.stitcher(u_first = runner_first,
+                                                               u_last = runner_last,
+                                                               u_track_ID = runner_track_ID,
+                                                               u_time_window_start = 1,
+                                                               u_time_window_steps = 0.1,
+                                                               u_x_diff_start = 1,
+                                                               u_x_diff_steps = 0.1,
+                                                               u_y_diff_start = 1,
+                                                               u_y_diff_steps = 0.1,
+                                                               iterations = 5000)
+                    
+                    ## extract tracks
+                    track_list = track.extractor(u_track_ID = seq_results[[3]])
+                    
+                    ## assemble full track data
+                    runner_concise_data = read.table(paste(dir_raw,data_names[n],"_concise.txt", sep=""))
+                    runner_concise_data = as.matrix(runner_concise_data); rownames(runner_concise_data) = NULL
+                    runner_track_data = track.data(u_track_ID = track_list, u_data = runner_concise_data)
+                    
+                    ## combine in one matrix
+                    track_matrix = runner_track_data[[1]][1,,drop=FALSE]; track_matrix = track_matrix[-1,]
+                    for(m in 1:length(runner_track_data)) {track_matrix = rbind(track_matrix, runner_track_data[[m]])}
+                    
+                    ## remove tracks shorter than 5 minutes
+                    ## track_matrix = track_matrix[which(unlist(lapply(track_matrix,nrow)) > 3000)]
+                    
+                    ## export tracks
+                    write.table(track_matrix, file=paste(dir_raw,data_names[n],"_track.txt", sep=""), sep="\t")
                
-               ## extract tracks
-               track_list = track.extractor(u_track_ID = seq_results[[3]])
-               
-               ## assemble full track data
-               runner_concise_data = read.table(paste(dir_raw,data_names[n],"_concise.txt", sep=""))
-               runner_concise_data = as.matrix(runner_concise_data); rownames(runner_concise_data) = NULL
-               runner_track_data = track.data(u_track_ID = track_list, u_data = runner_concise_data)
-               
-               ## combine in one matrix
-               track_matrix = runner_track_data[[1]][1,,drop=FALSE]; track_matrix = track_matrix[-1,]
-               for(m in 1:length(runner_track_data)) {track_matrix = rbind(track_matrix, runner_track_data[[m]])}
-               
-               ## remove tracks shorter than 5 minutes
-               ## track_matrix = track_matrix[which(unlist(lapply(track_matrix,nrow)) > 3000)]
-               
-               ## export tracks
-               write.table(track_matrix, file=paste(dir_raw,data_names[n],"_track.txt", sep=""), sep="\t")
-               
+               } else if (nrow(runner_last) == 0) {
+                    
+                    ## export tracks
+                    dummy =  matrix(NA, nrow=, ncol=8); Colnames(dummy) = c("frame_number", "time_in_deciseconds",)
+                    ## write.table(dummy, file=paste(dir_raw,data_names[n],"_track.txt", sep=""), sep="\t")
+               }
           }
      
      ## track camera matching ####
