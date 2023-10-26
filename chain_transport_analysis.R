@@ -641,6 +641,15 @@
                
           }
           
+          kek = runner_track[which(runner_track[,"ID_track"] == 26),]
+          kek2 = runner_track[which(runner_track[,"ID_track"] == 30),]
+          plot(kek[,"X"], kek[,"Y"], type = "l", col="red")
+          points(kek[2300,"X"], kek[2300,"Y"], col="dodgerblue")
+          points(kek2[,"X"], kek2[,"Y"], col="green", type="l")
+          
+          plot(1:nrow(kek2),log(kek2[,"distance"]), type="l")
+          abline(v=2300)
+          
           ## load and process video scoring data
           for (n in 1:length(data_dates)) {
           
