@@ -10,8 +10,9 @@
 ## file patch, libraries & custom functions ####
 
      ## paths
-     dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport/pfolder/"
-     dir_raw = "C:/Users/timte/Desktop/Konstanz/Chain transport/pfolder/raw data/"
+     # dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport/pfolder/"
+     # dir_raw = "C:/Users/timte/Desktop/Konstanz/Chain transport/pfolder/raw data/"
+     dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport/assembled tsv files/"
      # dir_github = "C:/Users/timte/Desktop/Konstanz/Chain transport/Github repository/"
      
      ## custom functions
@@ -67,6 +68,32 @@
           
      }
           
+     ## computes distances between datapoins, within tracklets
+     ## produces: adds a distance column to u_data
+     distance.calculator = function (u_data) {
+          
+          ## add distance col
+          u_data = cbind(u_data, rep(NA, nrow(u_data)))
+          colnames(u_data)[ncol(u_data)] = "distance"
+          
+          ## calculate all distances
+          for (n in 1:(nrow(u_data)-1)) {
+               
+               ## calculate distance
+               u_data[n,"distance"] = round( sqrt((as.numeric(u_data[n,"X"])-as.numeric(u_data[n+1,"X"]))^2+(as.numeric(u_data[n,"Y"])-as.numeric(u_data[n+1,"Y"]))^2),3)
+               
+               ## timer
+               print(paste("distance: ", round(n/nrow(u_data),3), sep=""))
+          }
+          
+          ## remove distances calculated between tracklets
+          u_data[which(diff(u_data[,"ID"]) != 0),"distance"] = NA
+          
+          ## return dataframe
+          return(u_data)
+          
+     }
+     
      ## takes pretty data and extracts the first and last of each tracklet in two separate matrices
      ## produces: first- and last-data matrix from a pretty data matrix
      first.last.finder = function (pretty_data) {
@@ -275,7 +302,7 @@
                # u_track_ID[(while_runner)] = NA
                
                ## add stitched tracklets to output list
-               if (is.null(while_runner)) {matches_list[[n]] = while_runner} else {matches_list[[min(while_runner)]] = while_runner}
+               if (is.null(while_runner)) {matches_list[[n]] = while_runner} else {matches_list[[min(while_runner,na.rm=TRUE)]] = while_runner}
           }
           
           ## format output
@@ -310,6 +337,65 @@
           return(track_list)
      }
      
+     
+     
+     u_track_data = runner_track; u_camera_cutoff=  camera_cutoff
+     
+     
+     ## checks if tracks are under camera returns time spans in minutes
+     ## produces matrix with camera times (also an warning which can be ignored)
+     under.camera = function(u_track_data, u_camera_cutoff) {
+          
+          ## output list
+          final_output = matrix(nrow = length(unique(u_track_data[,"ID_track"])), ncol=9) 
+          colnames(final_output) = c("track_ID", "c1_start", "c1_end", "c2_start", "c2_end",
+                                     "c3_start", "c3_end", "c4_start", "c4_end")
+          
+          for (n in 1:length(unique(u_track_data[,"ID_track"]))) {
+               
+               #n=n+1
+               
+               ## list IDs and pick tracks one by one
+               track_IDs = unique(u_track_data[,"ID_track"])
+               runner_track = u_track_data[which(u_track_data[,"ID_track"] == track_IDs[n]),]
+               
+               ## test for cameras
+               camera_one = which(runner_track[,"X"] >= u_camera_cutoff[[1]][1] & runner_track[,"X"] <= u_camera_cutoff[[1]][2] &
+                                       runner_track[,"Y"] >= u_camera_cutoff[[1]][3] & runner_track[,"Y"] <= u_camera_cutoff[[1]][4])
+               camera_two = which(runner_track[,"X"] >= u_camera_cutoff[[2]][1] & runner_track[,"X"] <= u_camera_cutoff[[2]][2] &
+                                       runner_track[,"Y"] >= u_camera_cutoff[[2]][3] & runner_track[,"Y"] <= u_camera_cutoff[[2]][4])
+               camera_three = which(runner_track[,"X"] >= u_camera_cutoff[[3]][1] & runner_track[,"X"] <= u_camera_cutoff[[3]][2] &
+                                         runner_track[,"Y"] >= u_camera_cutoff[[3]][3] & runner_track[,"Y"] <= u_camera_cutoff[[3]][4])
+               camera_four = which(runner_track[,"X"] >= u_camera_cutoff[[4]][1] & runner_track[,"X"] <= u_camera_cutoff[[4]][2] &
+                                        runner_track[,"Y"] >= u_camera_cutoff[[4]][3] & runner_track[,"Y"] <= u_camera_cutoff[[4]][4])
+               
+               ## extract times and add to output matrix
+               final_output[n,"track_ID"] = n
+               
+               if (length(camera_one) > 0) {
+                    camera_one_mins = round(range(runner_track[camera_one,"time_in_seconds"])/60,2)
+                    final_output[n,"c1_start"] = camera_one_mins[1]; final_output[n,"c1_end"] = camera_one_mins[2]}
+               if (length(camera_two) > 0) {
+                    camera_two_mins = round(range(runner_track[camera_two,"time_in_seconds"])/60,2)
+                    final_output[n,"c2_start"] = camera_two_mins[1]; final_output[n,"c2_end"] = camera_two_mins[2]}
+               if (length(camera_three) > 0) {
+                    camera_three_mins = round(range(runner_track[camera_three,"time_in_seconds"])/60,2)
+                    final_output[n,"c3_start"] = camera_three_mins[1]; final_output[n,"c3_end"] = camera_three_mins[2]}
+               if (length(camera_four) > 0) {
+                    camera_four_mins = round(range(runner_track[camera_four,"time_in_seconds"])/60,2)
+                    final_output[n,"c4_start"] = camera_four_mins[1]; final_output[n,"c4_end"] = camera_four_mins[2]}
+               
+          }
+          
+          ## replace Inf and -Inf by NA
+          final_output[sapply(final_output, is.infinite)] <- NA
+          
+          ## return output
+          return(final_output)
+     }
+     
+     
+     
      ## computes window based on parameters
      ## produces: dataframe with all window sizes
      windows_from_parameter = function(time_start, time_steps, x_start, x_steps, y_start, y_steps, iterations) {
@@ -332,78 +418,7 @@
           
      }
      
-     ## computes distances between datapoins, within tracklets
-     ## produces: adds a distance column to u_data
-     distance.calculator = function (u_data) {
-          
-          ## add distance col
-          u_data = cbind(u_data, rep(NA, nrow(u_data)))
-          colnames(u_data)[ncol(u_data)] = "distance"
-                                     
-          ## calculate all distances
-          for (n in 1:(nrow(u_data)-1)) {
-          
-               ## calculate distance
-               u_data[n,"distance"] = round( sqrt((as.numeric(u_data[n,"X"])-as.numeric(u_data[n+1,"X"]))^2+(as.numeric(u_data[n,"Y"])-as.numeric(u_data[n+1,"Y"]))^2),3)
-          
-               ## timer
-               print(paste("distance: ", round(n/nrow(u_data),3), sep=""))
-          }
-          
-          ## remove distances calculated between tracklets
-          u_data[which(diff(u_data[,"ID"]) != 0),"distance"] = NA
-          
-          ## return dataframe
-          return(u_data)
-          
-     }
      
-     ## checks if tracks are under camera returns time spans in minutes
-     ## produces matrix with camera times (also an warning which can be ignored)
-     under.camera = function(u_track_data, u_camera_cutoff) {
-          
-          ## output list
-          final_output = matrix(nrow = length(unique(u_track_data[,"ID_track"])), ncol=9) 
-          colnames(final_output) = c("track_ID", "c1_start", "c1_end", "c2_start", "c2_end",
-                                     "c3_start", "c3_end", "c4_start", "c4_end")
-          
-          for (n in 1:length(unique(u_track_data[,"ID_track"]))) {
-               
-               ## list IDs and pick tracks one by one
-               track_IDs = unique(u_track_data[,"ID_track"])
-               runner_track = u_track_data[which(u_track_data[,"ID_track"] == track_IDs[n]),]
-               
-               ## test for cameras
-               camera_one = which(runner_track[,"X"] >= u_camera_cutoff[[1]][1] & runner_track[,"X"] <= u_camera_cutoff[[1]][2] &
-                                       runner_track[,"Y"] >= u_camera_cutoff[[1]][3] & runner_track[,"Y"] <= u_camera_cutoff[[1]][4])
-               camera_two = which(runner_track[,"X"] >= u_camera_cutoff[[2]][1] & runner_track[,"X"] <= u_camera_cutoff[[2]][2] &
-                                       runner_track[,"Y"] >= u_camera_cutoff[[2]][3] & runner_track[,"Y"] <= u_camera_cutoff[[2]][4])
-               camera_three = which(runner_track[,"X"] >= u_camera_cutoff[[3]][1] & runner_track[,"X"] <= u_camera_cutoff[[3]][2] &
-                                         runner_track[,"Y"] >= u_camera_cutoff[[3]][3] & runner_track[,"Y"] <= u_camera_cutoff[[3]][4])
-               camera_four = which(runner_track[,"X"] >= u_camera_cutoff[[4]][1] & runner_track[,"X"] <= u_camera_cutoff[[4]][2] &
-                                        runner_track[,"Y"] >= u_camera_cutoff[[4]][3] & runner_track[,"Y"] <= u_camera_cutoff[[4]][4])
-               
-               ## extract times
-               camera_one_mins = round(range(runner_track[camera_one,"time_in_deciseconds"])/60,2)
-               camera_two_mins = round(range(runner_track[camera_two,"time_in_deciseconds"])/60,2)
-               camera_three_mins = round(range(runner_track[camera_three,"time_in_deciseconds"])/60,2)
-               camera_four_mins = round(range(runner_track[camera_four,"time_in_deciseconds"])/60,2)
-               
-               ## fill output matrix
-               final_output[n,"track_ID"] = n
-               final_output[n,"c1_start"] = camera_one_mins[1]; final_output[n,"c1_end"] = camera_one_mins[2]
-               final_output[n,"c2_start"] = camera_two_mins[1]; final_output[n,"c2_end"] = camera_two_mins[2]
-               final_output[n,"c3_start"] = camera_three_mins[1]; final_output[n,"c3_end"] = camera_three_mins[2]
-               final_output[n,"c4_start"] = camera_four_mins[1]; final_output[n,"c4_end"] = camera_four_mins[2]
-               
-          }
-          
-          ## replace Inf and -Inf by NA
-          final_output[sapply(final_output, is.infinite)] <- NA
-          
-          ## return output
-          return(final_output)
-     }
      
      
      
@@ -522,6 +537,68 @@
                ## remove objects to free up space
                rm(runner_raw_concise_data)
           }
+
+     ## load post awk script concise data ####
+          
+          ## automate for several files
+          data_names = list.files(dir_data, pattern="REDUCED.tsv")
+          data_dates = substr(data_names,1,8)
+          
+          ## loop through files
+          for (n in 1:length(data_names)) {
+               
+               ## print process
+               print(paste("making concise: ", n, " out of", length(data_names)), sep="")
+               
+               ## generate filename    
+               runner_filename = paste(dir_data,data_names[n], sep="")
+               
+               ## load file, rename cols, sort after ID and reduce to 10fps
+               runner_concise_data = as.matrix(read.table(file = runner_filename[n], sep=",", header=TRUE))
+               colnames(runner_concise_data) = c("frame_number", "time_in_seconds", "ID", "X", "Y", "Z")
+               runner_concise_data = runner_concise_data[order(runner_concise_data[,"ID"]),]
+               runner_concise_data = runner_concise_data[which(runner_concise_data[,"frame_number"] %in% seq(from=0, to=max(runner_concise_data[,"frame_number"]), by=6)),]
+               ## care frame numbers are not adjusted!!!
+               
+               ## remove tracklets with too high/low Z values
+               ## use Z values of the trail outline + 10 cm buffer
+               raw_trail_outline_data = read.table(file = paste(dir_data, "Trail_outline.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
+               clean_trail_data = m.concise.dataframe(raw_trail_outline_data); clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]; clean_trail_data = clean_trail_data[-78,]
+               ## generate cutoff values
+               low_cutoff_z = min(clean_trail_data[,"Z"]) - 100; high_cutoff_z = max(clean_trail_data[,"Z"]) + 100
+               ## extract affected IDs
+               IDs_to_remove_because_z = unique(runner_concise_data[which(runner_concise_data[,"Z"] <= low_cutoff_z | runner_concise_data[,"Z"] >= high_cutoff_z),][,"ID"])
+               ## remove affected IDs
+               if (length(IDs_to_remove_because_z) > 0) {runner_concise_data = runner_concise_data[-which(runner_concise_data[,"ID"] %in% IDs_to_remove_because_z),]}
+               
+               ## remove tracklets with big jumps in Z values
+               ## calculate differences
+               z_distances = diff(runner_concise_data[,"Z"])
+               ## remove differences between different tracklets
+               z_distances[which(diff(runner_concise_data[,"ID"]) != 0)] = NA
+               ## identify tracklets with jumps of more than 5cm
+               IDs_to_remove_because_of_z_diff = runner_concise_data[which(z_distances >= 50),"ID"]
+               ## remove them
+               if (length(IDs_to_remove_because_of_z_diff) > 0) {runner_concise_data = runner_concise_data[-which(runner_concise_data[,"ID"] %in% IDs_to_remove_because_of_z_diff),]}
+               
+               ## trim tracklets to remove what is under the cafeteria (first camera fov)
+               first_camera_fov = clean_trail_data[c(29,33,40,64),]
+               points_under_first_camera = which(runner_concise_data[,"X"] >= (first_camera_fov[4,"X"]+30) & ## add 3cm so that they show up for video watching
+                                                      runner_concise_data[,"X"] <= first_camera_fov[1,"X"] &
+                                                      runner_concise_data[,"Y"] >= first_camera_fov[3,"Y"] &
+                                                      runner_concise_data[,"Y"] <= first_camera_fov[4,"Y"])
+               if (sum(points_under_first_camera) != 0) {runner_concise_data = runner_concise_data[-points_under_first_camera,]}
+               
+               ## calculate distances 
+               runner_concise_data = distance.calculator(runner_concise_data)
+               
+               ## export new dataframe to txt
+               write.table(runner_concise_data, file=paste(dir_data, paste(substr(data_names[n], 1,nchar(data_names[n])-12),"_concise.txt",sep=""), sep=""), sep="\t")
+               
+               ## remove objects to free up space
+               rm(runner_concise_data)
+          }
+          
           
      ## extract first and last datapoint for each tracklet ####
           
@@ -529,10 +606,10 @@
           for (n in 1:length(data_names)) {
                
                ## print process
-               print(paste("processing file ", n, " out of", length(data_names)), sep="")
+               print(paste("extracing first and last: ", n, " out of", length(data_names)), sep="")
                
                ## generate filename
-               runner_filename = paste(dir_raw,data_names[n],"_concise.txt", sep="") 
+               runner_filename = paste(dir_data,substr(data_names[n], 1,nchar(data_names[n])-12),"_concise.txt", sep="") 
                
                ## one by one
                runner_concise_data = read.table(runner_filename) 
@@ -541,22 +618,19 @@
                runner_first_last_list = first.last.finder(runner_concise_data)
                
                ## export short dataframes
-               write.table(runner_first_last_list[[1]], file=paste(dir_raw,data_names[n],"_first.txt", sep=""), sep="\t")
-               write.table(runner_first_last_list[[2]], file=paste(dir_raw,data_names[n],"_last.txt", sep=""), sep="\t")
+               write.table(runner_first_last_list[[1]], file=paste(dir_data,substr(data_names[n], 1,nchar(data_names[n])-12),"_first.txt", sep=""), sep="\t")
+               write.table(runner_first_last_list[[2]], file=paste(dir_data,substr(data_names[n], 1,nchar(data_names[n])-12),"_last.txt", sep=""), sep="\t")
      
           }
      
      ## stitch tracklets together (5000 iterations < 3 mins) ####
 
-          ## automate for several files
-          data_names = substr(list.files(dir_raw, pattern=".tsv"),1,nchar(list.files(dir_raw, pattern=".tsv"))-4)     
-     
           ## workhorse
           for (n in 1:length(data_names)) {
                
                ## make filename
-               runner_filename_first = paste(dir_raw,data_names[n],"_first.txt", sep="")
-               runner_filename_last = paste(dir_raw,data_names[n],"_last.txt", sep="")
+               runner_filename_first = paste(dir_data,substr(data_names[n], 1,nchar(data_names[n])-12),"_first.txt", sep="")
+               runner_filename_last = paste(dir_data,substr(data_names[n], 1,nchar(data_names[n])-12),"_last.txt", sep="")
                
                ## load data and make matrix for faster computation
                runner_first = read.table(runner_filename_first) 
@@ -584,13 +658,13 @@
                                                                u_x_diff_steps = 0.1,
                                                                u_y_diff_start = 1,
                                                                u_y_diff_steps = 0.1,
-                                                               iterations = 5000)
+                                                               iterations = 3000)
                     
                     ## extract tracks
                     track_list = track.extractor(u_track_ID = seq_results[[3]])
                     
                     ## assemble full track data
-                    runner_concise_data = read.table(paste(dir_raw,data_names[n],"_concise.txt", sep=""))
+                    runner_concise_data = read.table(paste(dir_data,substr(data_names[n], 1,nchar(data_names[n])-12),"_concise.txt", sep=""))
                     runner_concise_data = as.matrix(runner_concise_data); rownames(runner_concise_data) = NULL
                     runner_track_data = track.data(u_track_ID = track_list, u_data = runner_concise_data)
                     
@@ -602,7 +676,7 @@
                     ## track_matrix = track_matrix[which(unlist(lapply(track_matrix,nrow)) > 3000)]
                     
                     ## export tracks
-                    write.table(track_matrix, file=paste(dir_raw,data_names[n],"_track.txt", sep=""), sep="\t")
+                    write.table(track_matrix, file=paste(dir_data,substr(data_names[n], 1,nchar(data_names[n])-12),"_track.txt", sep=""), sep="\t")
                
                } else if (nrow(runner_last) == 0) {
                     
@@ -615,7 +689,7 @@
      ## track camera matching ####
           
           ## load files
-          track_files = list.files(dir_raw, pattern="track.txt")
+          track_files = list.files(dir_data, pattern="track.txt")
           
           ## load camera_fov
           camera_fov = read.table(file = paste(dir_data, "camera_fov.txt", sep=""), sep = '\t')
@@ -631,7 +705,7 @@
           for (n in 1:length(track_files)) {
                
                ## load tracks
-               runner_track = read.table(paste(dir_raw,track_files[n], sep=""))  
+               runner_track = read.table(paste(dir_data,track_files[n], sep=""))  
                
                ## find camera track matches and store in list
                runner_camera_df = under.camera(runner_track, camera_cutoff)
@@ -641,14 +715,14 @@
                
           }
           
-          kek = runner_track[which(runner_track[,"ID_track"] == 26),]
+          kek = runner_track[which(runner_track[,"ID_track"] == 22),]
           kek2 = runner_track[which(runner_track[,"ID_track"] == 30),]
           plot(kek[,"X"], kek[,"Y"], type = "l", col="red")
           points(kek[2300,"X"], kek[2300,"Y"], col="dodgerblue")
           points(kek2[,"X"], kek2[,"Y"], col="green", type="l")
           
           plot(1:nrow(kek2),log(kek2[,"distance"]), type="l")
-          abline(v=2300)
+          
           
           ## load and process video scoring data
           for (n in 1:length(data_dates)) {
