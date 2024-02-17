@@ -337,11 +337,6 @@
           return(track_list)
      }
      
-     
-     
-     u_track_data = runner_track; u_camera_cutoff=  camera_cutoff
-     
-     
      ## checks if tracks are under camera returns time spans in minutes
      ## produces matrix with camera times (also an warning which can be ignored)
      under.camera = function(u_track_data, u_camera_cutoff) {
@@ -554,7 +549,7 @@
                runner_filename = paste(dir_data,data_names[n], sep="")
                
                ## load file, rename cols, sort after ID and reduce to 10fps
-               runner_concise_data = as.matrix(read.table(file = runner_filename[n], sep=",", header=TRUE))
+               runner_concise_data = as.matrix(read.table(file = runner_filename, sep=",", header=TRUE))
                colnames(runner_concise_data) = c("frame_number", "time_in_seconds", "ID", "X", "Y", "Z")
                runner_concise_data = runner_concise_data[order(runner_concise_data[,"ID"]),]
                runner_concise_data = runner_concise_data[which(runner_concise_data[,"frame_number"] %in% seq(from=0, to=max(runner_concise_data[,"frame_number"]), by=6)),]
@@ -658,7 +653,7 @@
                                                                u_x_diff_steps = 0.1,
                                                                u_y_diff_start = 1,
                                                                u_y_diff_steps = 0.1,
-                                                               iterations = 3000)
+                                                               iterations = 5000)
                     
                     ## extract tracks
                     track_list = track.extractor(u_track_ID = seq_results[[3]])
@@ -681,15 +676,15 @@
                } else if (nrow(runner_last) == 0) {
                     
                     ## export tracks
-                    dummy =  matrix(NA, nrow=, ncol=8); Colnames(dummy) = c("frame_number", "time_in_deciseconds",)
-                    ## write.table(dummy, file=paste(dir_raw,data_names[n],"_track.txt", sep=""), sep="\t")
+                    dummy =  matrix(NA, nrow=0, ncol=7); colnames(dummy) = c("frame_number", "time_in_deciseconds", "ID", "X", "Y", "Z", "distance")
+                    write.table(dummy, file=paste(dir_data,substr(data_names[n], 1,nchar(data_names[n])-12),"_track.txt", sep=""), sep="\t")
                }
           }
      
      ## track camera matching ####
           
           ## load files
-          track_files = list.files(dir_data, pattern="track.txt")
+          track_files = list.files(dir_data, pattern="_track.txt")
           
           ## load camera_fov
           camera_fov = read.table(file = paste(dir_data, "camera_fov.txt", sep=""), sep = '\t')
@@ -707,12 +702,28 @@
                ## load tracks
                runner_track = read.table(paste(dir_data,track_files[n], sep=""))  
                
-               ## find camera track matches and store in list
-               runner_camera_df = under.camera(runner_track, camera_cutoff)
+               if (!is.na(runner_track[1,1])) {
                
-               ## remove tracks without camera picture
-               tracks_under_cameras[[n]] = runner_camera_df[which(apply(runner_camera_df[,c(2:9)],1, function(x) sum(x, na.rm = TRUE)) != 0),]
-               
+                    ## find camera track matches and store in list
+                    runner_camera_df = under.camera(runner_track, camera_cutoff)
+                    
+                    ## remove tracks without camera picture
+                    tracks_under_cameras[[n]] = runner_camera_df[which(apply(runner_camera_df[,c(2:9), drop=FALSE],1, function(x) sum(x, na.rm = TRUE)) != 0),]
+                    
+                    ## export table
+                    write.table(tracks_under_cameras[[n]], file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_cameras.txt", sep=""), sep="\t")
+                    
+               } else if (is.na(runner_track[1,1])) {
+                    
+                    ## dummy matrix
+                    dummy = matrix(NA, nrow = 1, ncol=9) 
+                    colnames(dummy) = c("track_ID", "c1_start", "c1_end", "c2_start", "c2_end",
+                                               "c3_start", "c3_end", "c4_start", "c4_end")
+                    
+                    ## export dummy
+                    write.table(dummy, file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_cameras.txt", sep=""), sep="\t")
+                    
+               }
           }
           
           kek = runner_track[which(runner_track[,"ID_track"] == 22),]
