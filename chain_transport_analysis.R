@@ -358,7 +358,7 @@
                
                ## list IDs and pick tracks one by one
                track_IDs = unique(u_track_data[,"ID_track"])
-               runner_track = u_track_data[which(u_track_data[,"ID_track"] == track_IDs[n]),]
+               runner_track = u_track_data[which(u_track_data[,"ID_track"] == track_IDs[n]),, drop=FALSE]
                
                ## test for cameras
                camera_one = which(runner_track[,"X"] >= u_camera_cutoff[[1]][1] & runner_track[,"X"] <= u_camera_cutoff[[1]][2] &
@@ -621,7 +621,7 @@
                } else if (nrow(runner_last) == 0) {
                     
                     ## export tracks
-                    dummy =  matrix(NA, nrow=1, ncol=7); colnames(dummy) = c("frame_number", "time_in_deciseconds", "ID", "X", "Y", "Z", "distance")
+                    dummy =  matrix(NA, nrow=1, ncol=8); colnames(dummy) = c("frame_number", "time_in_deciseconds", "ID", "X", "Y", "Z", "distance", "ID_track")
                     write.table(dummy, file=paste(dir_data,substr(data_names[n], 1,nchar(data_names[n])-12),"_track.txt", sep=""), sep="\t")
                }
           }
@@ -636,36 +636,23 @@
           
           ## create list with camera cut-off values
           camera_cutoff = vector(mode='list', length=4)
-          camera_cutoff[[1]] = c(min(camera_fov[which(camera_fov[,"ID"] == 1),][,"X"]),
-                                 max(camera_fov[which(camera_fov[,"ID"] == 1),][,"X"]),
-                                 min(camera_fov[which(camera_fov[,"ID"] == 1),][,"Y"]),
-                                 max(camera_fov[which(camera_fov[,"ID"] == 1),][,"Y"]))
-          camera_cutoff[[2]] = c(min(camera_fov[which(camera_fov[,"ID"] == 2),][,"X"]),
-                                 max(camera_fov[which(camera_fov[,"ID"] == 2),][,"X"]),
-                                 min(camera_fov[which(camera_fov[,"ID"] == 2),][,"Y"]),
-                                 max(camera_fov[which(camera_fov[,"ID"] == 2),][,"Y"]))
-          camera_cutoff[[3]] = c(min(camera_fov[which(camera_fov[,"ID"] == 3),][,"X"]),
-                                 max(camera_fov[which(camera_fov[,"ID"] == 3),][,"X"]),
-                                 min(camera_fov[which(camera_fov[,"ID"] == 3),][,"Y"]),
-                                 max(camera_fov[which(camera_fov[,"ID"] == 3),][,"Y"]))
-          camera_cutoff[[4]] = c(min(camera_fov[which(camera_fov[,"ID"] == 4),][,"X"]),
-                                 max(camera_fov[which(camera_fov[,"ID"] == 4),][,"X"]),
-                                 min(camera_fov[which(camera_fov[,"ID"] == 4),][,"Y"]),
-                                 max(camera_fov[which(camera_fov[,"ID"] == 4),][,"Y"]))
+          camera_cutoff[[1]] = c(min(camera_fov[which(camera_fov[,"ID"] == 1),][,"X"]),max(camera_fov[which(camera_fov[,"ID"] == 1),][,"X"]),
+                                 min(camera_fov[which(camera_fov[,"ID"] == 1),][,"Y"]),max(camera_fov[which(camera_fov[,"ID"] == 1),][,"Y"]))
+          camera_cutoff[[2]] = c(min(camera_fov[which(camera_fov[,"ID"] == 2),][,"X"]),max(camera_fov[which(camera_fov[,"ID"] == 2),][,"X"]),
+                                 min(camera_fov[which(camera_fov[,"ID"] == 2),][,"Y"]),max(camera_fov[which(camera_fov[,"ID"] == 2),][,"Y"]))
+          camera_cutoff[[3]] = c(min(camera_fov[which(camera_fov[,"ID"] == 3),][,"X"]),max(camera_fov[which(camera_fov[,"ID"] == 3),][,"X"]),
+                                 min(camera_fov[which(camera_fov[,"ID"] == 3),][,"Y"]),max(camera_fov[which(camera_fov[,"ID"] == 3),][,"Y"]))
+          camera_cutoff[[4]] = c(min(camera_fov[which(camera_fov[,"ID"] == 4),][,"X"]),max(camera_fov[which(camera_fov[,"ID"] == 4),][,"X"]),
+                                 min(camera_fov[which(camera_fov[,"ID"] == 4),][,"Y"]),max(camera_fov[which(camera_fov[,"ID"] == 4),][,"Y"]))
           
-          
-          # camera_cutoff[[1]] = c(1300, 2750, 1800, 2250)
-          # camera_cutoff[[2]] = c(-1300, 100, -2350, -1900)
-          # camera_cutoff[[3]] = c(3500, 4500, 4350, 5400)
-          # camera_cutoff[[4]] = c(-1850, -400, 8020, 8410)
-          
+          ## empty list for storage
           tracks_under_cameras = vector(mode='list', length=length(track_files))
           
-          ## workhorse
+          ## extract times when track enter and leave camera fovs
           for (n in 1:length(track_files)) {
                
                ## load tracks
-               runner_track = read.table(paste(dir_data,track_files[n], sep=""), )  
+               runner_track = read.table(paste(dir_data,track_files[n], sep=""))
                
                if (!is.na(runner_track[1,1])) {
                
@@ -673,7 +660,7 @@
                     runner_camera_df = under.camera(runner_track, camera_cutoff)
                     
                     ## remove tracks without camera picture
-                    tracks_under_cameras[[n]] = runner_camera_df[which(apply(runner_camera_df[,c(2:9), drop=FALSE],1, function(x) sum(x, na.rm = TRUE)) != 0),,drop=FALSE]
+                    tracks_under_cameras[[n]] = runner_camera_df[which(apply(runner_camera_df[,c(2:ncol(runner_camera_df)), drop=FALSE],1, function(x) sum(x, na.rm = TRUE)) != 0),,drop=FALSE]
                     
                     ## change the symbol in cols to fill while watching students
                     tracks_under_cameras[[n]][,c("c1_start_shape",
@@ -694,6 +681,7 @@
                     
                     ## export table
                     write.csv(tracks_under_cameras[[n]], file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera.csv", sep=""))
+                    write.table(tracks_under_cameras[[n]], file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera.txt", sep=""), sep="\t")
                     
                } else if (is.na(runner_track[1,1])) {
                     
@@ -711,25 +699,66 @@
                                                                  
                     ## export dummy
                     write.csv(dummy, file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera.csv", sep=""))
+                    write.table(dummy, file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera.txt", sep=""), sep="\t")
                     
                }
           }
           
-          kek = runner_track[which(runner_track[,"ID_track"] == 22),]
-          kek2 = runner_track[which(runner_track[,"ID_track"] == 30),]
-          plot(kek[,"X"], kek[,"Y"], type = "l", col="red")
-          points(kek[2300,"X"], kek[2300,"Y"], col="dodgerblue")
-          points(kek2[,"X"], kek2[,"Y"], col="green", type="l")
-          
-          plot(1:nrow(kek2),log(kek2[,"distance"]), type="l")
           
           
+          
+          ## find track length
+          
+          ## extract tracks that pass under the cameras
+          under_camera_files = list.files(dir_data, pattern="under_camera.txt")
+          under_camera_tracks = list.files(dir_data, pattern="_track.txt")
+          
+          ## list for track IDs
+          track_IDs = vector(mode='list', length=length(under_camera_files))
+          track_length = vector(mode='list', length=length(under_camera_files))
+          
+          ## extract tracks that pass under camera
+          for (n in 1:length(under_camera_files)){
+               
+               ## extract IDs
+               runner_camera = read.table(paste(dir_data,under_camera_files[n], sep=""),sep = '\t', header=TRUE)
+               track_IDs[[n]] = runner_camera[,"track_ID"]
+               
+          }
+          
+          ## counts tracks
+          for (n in 1:length(track_IDs)){
+               
+               ## load track
+               runner_tracks = as.data.frame(read.table(paste(dir_data,under_camera_tracks[n], sep=""),sep = '\t', header=TRUE))
+               
+               ## create vector for storage
+               runner_vec = rep(NA, length(track_IDs[[n]]))
+               
+               ## count length of each track
+               for (m in 1:length(track_IDs[[n]])){
+                    
+                    ## count track
+                    runner_vec[m] = length(which(runner_tracks[,"ID_track"] == track_IDs[[n]][m]))
+                    
+               }
+               
+               ## store in list
+               track_length[[n]] = runner_vec
+          }
+          
+          ## extract the length of each track that passes under the camera
+          ## TLDR: i guess it makes sense to filter for length
+          
+          
+          
+          ## WIP
           ## load and process video scoring data
           for (n in 1:length(data_dates)) {
           
                ## load video scoring data
-               video_data = read.table(file = paste(dir_raw,data_dates,"_master.txt", sep=""),sep = '\t', header=TRUE, fill=FALSE)
-          
+               video_data = read.table(file = paste(dir_data,data_dates[n],"_master.txt", sep=""),sep = '\t', header=TRUE, fill=FALSE)
+
                ## create list for split dataframes
                runner_dfs = vector(mode="list", length=2)
           
@@ -1049,19 +1078,7 @@
           }
           
           
-## 3. Video data -----------------------------------------------------------####
-     ## load and handle data ####
-     
-     
-          
-          ## to match
-          tracks_under_cameras[[3]]
-          output_list_df[[1]]
-     
-
-     
-     
-## 4. ARCHIVE --------------------------------------------------------------####
+## 3. ARCHIVE --------------------------------------------------------------####
      ## load raw data and transform to concise matrix ####
           
           ## automate for several files
