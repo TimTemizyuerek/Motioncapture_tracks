@@ -339,11 +339,11 @@
      
      ## checks if tracks are under camera
      ## produces matrix with camera times (also an warning which can be ignored)
-     u_track_data = runner_track; u_camera_cutoff = camera_cutoff
-     under.camera2 = function(u_track_data, u_camera_cutoff) {
+     # u_track_data = runner_track; u_camera_cutoff = camera_cutoff
+     under.camera = function(u_track_data, u_camera_cutoff) {
           
           ## output list
-          final_output = matrix(nrow = length(unique(u_track_data[,"ID_track"])), ncol=17) 
+          final_output = matrix(nrow = length(unique(u_track_data[,"ID_track"])), ncol=15) 
           colnames(final_output) = c("track_ID", 
                                      "c1_end", "c1_end_shape",
                                      "c2_start", "c2_start_shape",
@@ -358,12 +358,14 @@
                ## list IDs and pick tracks one by one
                track_IDs = unique(u_track_data[,"ID_track"])
                runner_track = u_track_data[which(u_track_data[,"ID_track"] == track_IDs[n]),, drop=FALSE]
+               final_output[n,"track_ID"] = track_IDs[n]
                
                ## c1_end
                camera_one = which(runner_track[,"X"] > (u_camera_cutoff[[1]][1]-10) & runner_track[,"X"] < (u_camera_cutoff[[1]][1]+10) &
                                   runner_track[,"Y"] > u_camera_cutoff[[1]][3] & runner_track[,"Y"] < u_camera_cutoff[[1]][4])
-               final_output[n,"c1_end"] = round(max((runner_track[camera_one,"time_in_seconds"])/60),2)
+               final_output[n,"c1_end"] = round(min((runner_track[camera_one,"time_in_seconds"])/60),2)
                 
+               
                ## c2_start
                camera_two_start = which(runner_track[,"X"] > (u_camera_cutoff[[2]][1]-10) & runner_track[,"X"] < (u_camera_cutoff[[2]][1]+10) &
                                         runner_track[,"Y"] > u_camera_cutoff[[2]][3] & runner_track[,"Y"] < u_camera_cutoff[[2]][4])
@@ -372,135 +374,89 @@
                ## c2_end
                camera_two_end = which(runner_track[,"X"] > (u_camera_cutoff[[2]][2]-10) & runner_track[,"X"] < (u_camera_cutoff[[2]][2]+10) &
                                         runner_track[,"Y"] > u_camera_cutoff[[2]][3] & runner_track[,"Y"] < u_camera_cutoff[[2]][4])
-               final_output[n,"c2_end"] = round(max((runner_track[camera_two_end,"time_in_seconds"])/60),2)
+               final_output[n,"c2_end"] = round(min((runner_track[camera_two_end,"time_in_seconds"])/60),2)
+               
                
                ## c3 start
+               ## create 10 rectangles that track the camera fov line
+               c3_start_slope = (camera_fov[11,"Y"]-camera_fov[9,"Y"])/(camera_fov[11,"X"]-camera_fov[9,"X"])
+               c3_start_intercept = camera_fov[11,"Y"]-c3_start_slope*camera_fov[11,"X"]
+               x_rect_centerpoints = seq(from=camera_fov[9,"X"], to=camera_fov[11,"X"], length.out = 10)
+               y_rect_centerpoints = c3_start_slope*x_rect_centerpoints+c3_start_intercept
                
-               plot(camera_fov[9:12,"X"], camera_fov[9:12,"Y"])
-               polygon(x=c(camera_fov[9,"X"],camera_fov[11,"X"]),
-                       y=c(camera_fov[9,"Y"],camera_fov[11,"Y"]))
+               ## test for rectangles
+               camera_three_start = which(runner_track[,"X"] > (x_rect_centerpoints[1]-35) & runner_track[,"X"] < (x_rect_centerpoints[1]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[1]-35) & runner_track[,"Y"] < (y_rect_centerpoints[1]+35) 
+                                          | runner_track[,"X"] > (x_rect_centerpoints[2]-35) & runner_track[,"X"] < (x_rect_centerpoints[2]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[2]-35) & runner_track[,"Y"] < (y_rect_centerpoints[2]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[3]-35) & runner_track[,"X"] < (x_rect_centerpoints[3]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[3]-35) & runner_track[,"Y"] < (y_rect_centerpoints[3]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[4]-35) & runner_track[,"X"] < (x_rect_centerpoints[4]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[4]-35) & runner_track[,"Y"] < (y_rect_centerpoints[4]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[5]-35) & runner_track[,"X"] < (x_rect_centerpoints[5]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[5]-35) & runner_track[,"Y"] < (y_rect_centerpoints[5]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[6]-35) & runner_track[,"X"] < (x_rect_centerpoints[6]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[6]-35) & runner_track[,"Y"] < (y_rect_centerpoints[6]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[7]-35) & runner_track[,"X"] < (x_rect_centerpoints[7]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[7]-35) & runner_track[,"Y"] < (y_rect_centerpoints[7]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[8]-35) & runner_track[,"X"] < (x_rect_centerpoints[8]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[8]-35) & runner_track[,"Y"] < (y_rect_centerpoints[8]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[9]-35) & runner_track[,"X"] < (x_rect_centerpoints[9]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[9]-35) & runner_track[,"Y"] < (y_rect_centerpoints[9]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[10]-35) & runner_track[,"X"] < (x_rect_centerpoints[10]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[10]-35) & runner_track[,"Y"] < (y_rect_centerpoints[10]+35))
+               final_output[n,"c3_start"] = round(max((runner_track[camera_three_start,"time_in_seconds"])/60),2)
+               
+               ## c3 end
+               ## create 10 rectangles that track the camera fov line
+               c3_end_slope = (camera_fov[12,"Y"]-camera_fov[10,"Y"])/(camera_fov[12,"X"]-camera_fov[10,"X"])
+               c3_end_intercept = camera_fov[12,"Y"]-c3_end_slope*camera_fov[12,"X"]
+               x_rect_centerpoints = seq(from=camera_fov[10,"X"], to=camera_fov[12,"X"], length.out = 10)
+               y_rect_centerpoints = c3_end_slope*x_rect_centerpoints+c3_end_intercept
+               
+               ## test for rectangles
+               camera_three_end = which(runner_track[,"X"] > (x_rect_centerpoints[1]-35) & runner_track[,"X"] < (x_rect_centerpoints[1]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[1]-35) & runner_track[,"Y"] < (y_rect_centerpoints[1]+35) 
+                                          | runner_track[,"X"] > (x_rect_centerpoints[2]-35) & runner_track[,"X"] < (x_rect_centerpoints[2]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[2]-35) & runner_track[,"Y"] < (y_rect_centerpoints[2]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[3]-35) & runner_track[,"X"] < (x_rect_centerpoints[3]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[3]-35) & runner_track[,"Y"] < (y_rect_centerpoints[3]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[4]-35) & runner_track[,"X"] < (x_rect_centerpoints[4]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[4]-35) & runner_track[,"Y"] < (y_rect_centerpoints[4]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[5]-35) & runner_track[,"X"] < (x_rect_centerpoints[5]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[5]-35) & runner_track[,"Y"] < (y_rect_centerpoints[5]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[6]-35) & runner_track[,"X"] < (x_rect_centerpoints[6]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[6]-35) & runner_track[,"Y"] < (y_rect_centerpoints[6]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[7]-35) & runner_track[,"X"] < (x_rect_centerpoints[7]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[7]-35) & runner_track[,"Y"] < (y_rect_centerpoints[7]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[8]-35) & runner_track[,"X"] < (x_rect_centerpoints[8]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[8]-35) & runner_track[,"Y"] < (y_rect_centerpoints[8]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[9]-35) & runner_track[,"X"] < (x_rect_centerpoints[9]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[9]-35) & runner_track[,"Y"] < (y_rect_centerpoints[9]+35)
+                                          | runner_track[,"X"] > (x_rect_centerpoints[10]-35) & runner_track[,"X"] < (x_rect_centerpoints[10]+35) 
+                                          & runner_track[,"Y"] > (y_rect_centerpoints[10]-35) & runner_track[,"Y"] < (y_rect_centerpoints[10]+35))
+               final_output[n,"c3_end"] = round(min((runner_track[camera_three_end,"time_in_seconds"])/60),2)
+               final_output[n,]
                
                
+               ## c4_start
+               camera_four_start = which(runner_track[,"X"] > (u_camera_cutoff[[4]][1]-10) & runner_track[,"X"] < (u_camera_cutoff[[4]][1]+10) &
+                                             runner_track[,"Y"] > u_camera_cutoff[[4]][3] & runner_track[,"Y"] < u_camera_cutoff[[4]][4])
+               final_output[n,"c4_start"] = round(max((runner_track[camera_four_start,"time_in_seconds"])/60),2)
                
-               ## test for camera three
-               camera_three = which(runner_track[,"X"] > (u_camera_cutoff[[2]][1]-10) & runner_track[,"X"] < (u_camera_cutoff[[2]][1]+10),
-                                    runner_track[,"Y"] > u_camera_cutoff[[2]][3] & runner_track[,"Y"] < u_camera_cutoff[[2]][4])
-                              
-               
+               ## c4_end
+               camera_four_end = which(runner_track[,"X"] > (u_camera_cutoff[[4]][2]-10) & runner_track[,"X"] < (u_camera_cutoff[[4]][2]+10) &
+                                           runner_track[,"Y"] > u_camera_cutoff[[4]][3] & runner_track[,"Y"] < u_camera_cutoff[[4]][4])
+               final_output[n,"c4_end"] = round(min((runner_track[camera_four_end,"time_in_seconds"])/60),2)
+                                               
           }
-                                
-                                  
-                    
-                    
-                    
-                    
-                    
-                    which(runner_track[,"X"] >= u_camera_cutoff[[1]][1] & runner_track[,"X"] <= u_camera_cutoff[[1]][2] &
-                                       runner_track[,"Y"] >= u_camera_cutoff[[1]][3] & runner_track[,"Y"] <= u_camera_cutoff[[1]][4])
                
-               
-               
-               
-               
-               camera_two = which(runner_track[,"X"] >= u_camera_cutoff[[2]][1] & runner_track[,"X"] <= u_camera_cutoff[[2]][2] &
-                                       runner_track[,"Y"] >= u_camera_cutoff[[2]][3] & runner_track[,"Y"] <= u_camera_cutoff[[2]][4])
-               camera_three = which(runner_track[,"X"] >= u_camera_cutoff[[3]][1] & runner_track[,"X"] <= u_camera_cutoff[[3]][2] &
-                                         runner_track[,"Y"] >= u_camera_cutoff[[3]][3] & runner_track[,"Y"] <= u_camera_cutoff[[3]][4])
-               camera_four = which(runner_track[,"X"] >= u_camera_cutoff[[4]][1] & runner_track[,"X"] <= u_camera_cutoff[[4]][2] &
-                                        runner_track[,"Y"] >= u_camera_cutoff[[4]][3] & runner_track[,"Y"] <= u_camera_cutoff[[4]][4])
-               
-               ## extract times and add to output matrix
-               final_output[n,"track_ID"] = n
-               
-               if (length(camera_one) > 0) {
-                    camera_one_mins = round(range(runner_track[camera_one,"time_in_seconds"])/60,2)
-                    final_output[n,"c1_start"] = camera_one_mins[1]; final_output[n,"c1_end"] = camera_one_mins[2]}
-               if (length(camera_two) > 0) {
-                    camera_two_mins = round(range(runner_track[camera_two,"time_in_seconds"])/60,2)
-                    final_output[n,"c2_start"] = camera_two_mins[1]; final_output[n,"c2_end"] = camera_two_mins[2]}
-               if (length(camera_three) > 0) {
-                    camera_three_mins = round(range(runner_track[camera_three,"time_in_seconds"])/60,2)
-                    final_output[n,"c3_start"] = camera_three_mins[1]; final_output[n,"c3_end"] = camera_three_mins[2]}
-               if (length(camera_four) > 0) {
-                    camera_four_mins = round(range(runner_track[camera_four,"time_in_seconds"])/60,2)
-                    final_output[n,"c4_start"] = camera_four_mins[1]; final_output[n,"c4_end"] = camera_four_mins[2]}
-               
-          }
-          
           ## replace Inf and -Inf by NA
           final_output[sapply(final_output, is.infinite)] <- NA
           
           if (nrow(final_output) > 1) {
                ## transform into 60 second minutes
                final_output[,c("c1_end", "c2_start", "c2_end", "c3_start", "c3_end", "c4_start", "c4_end")] = apply(final_output[,c("c1_end", "c2_start", "c2_end", "c3_start", "c3_end", "c4_start", "c4_end")], 2, function(x) round(floor(x)+((x %% 1)*0.6),2))
-          }
-          
-          ## return output
-          return(final_output)
-     }
-     
-     
-     
-     
-     
-     
-     ## checks if tracks are under camera returns time spans in minutes
-     ## produces matrix with camera times (also an warning which can be ignored)
-     #u_track_data = runner_track; u_camera_cutoff = camera_cutoff
-     under.camera = function(u_track_data, u_camera_cutoff) {
-          
-          ## output list
-          final_output = matrix(nrow = length(unique(u_track_data[,"ID_track"])), ncol=17) 
-          colnames(final_output) = c("track_ID", 
-                                     "c1_start", "c1_start_shape",
-                                     "c1_end", "c1_end_shape",
-                                     "c2_start", "c2_start_shape",
-                                     "c2_end", "c2_end_shape",
-                                     "c3_start", "c3_start_shape",
-                                     "c3_end", "c3_end_shape",
-                                     "c4_start", "c4_start_shape",
-                                     "c4_end", "c4_end_shape")
-                                     
-          for (n in 1:length(unique(u_track_data[,"ID_track"]))) {
-               
-               ## list IDs and pick tracks one by one
-               track_IDs = unique(u_track_data[,"ID_track"])
-               runner_track = u_track_data[which(u_track_data[,"ID_track"] == track_IDs[n]),, drop=FALSE]
-               
-               ## test for cameras
-               camera_one = which(runner_track[,"X"] >= u_camera_cutoff[[1]][1] & runner_track[,"X"] <= u_camera_cutoff[[1]][2] &
-                                       runner_track[,"Y"] >= u_camera_cutoff[[1]][3] & runner_track[,"Y"] <= u_camera_cutoff[[1]][4])
-               camera_two = which(runner_track[,"X"] >= u_camera_cutoff[[2]][1] & runner_track[,"X"] <= u_camera_cutoff[[2]][2] &
-                                       runner_track[,"Y"] >= u_camera_cutoff[[2]][3] & runner_track[,"Y"] <= u_camera_cutoff[[2]][4])
-               camera_three = which(runner_track[,"X"] >= u_camera_cutoff[[3]][1] & runner_track[,"X"] <= u_camera_cutoff[[3]][2] &
-                                         runner_track[,"Y"] >= u_camera_cutoff[[3]][3] & runner_track[,"Y"] <= u_camera_cutoff[[3]][4])
-               camera_four = which(runner_track[,"X"] >= u_camera_cutoff[[4]][1] & runner_track[,"X"] <= u_camera_cutoff[[4]][2] &
-                                        runner_track[,"Y"] >= u_camera_cutoff[[4]][3] & runner_track[,"Y"] <= u_camera_cutoff[[4]][4])
-               
-               ## extract times and add to output matrix
-               final_output[n,"track_ID"] = n
-               
-               if (length(camera_one) > 0) {
-                    camera_one_mins = round(range(runner_track[camera_one,"time_in_seconds"])/60,2)
-                    final_output[n,"c1_start"] = camera_one_mins[1]; final_output[n,"c1_end"] = camera_one_mins[2]}
-               if (length(camera_two) > 0) {
-                    camera_two_mins = round(range(runner_track[camera_two,"time_in_seconds"])/60,2)
-                    final_output[n,"c2_start"] = camera_two_mins[1]; final_output[n,"c2_end"] = camera_two_mins[2]}
-               if (length(camera_three) > 0) {
-                    camera_three_mins = round(range(runner_track[camera_three,"time_in_seconds"])/60,2)
-                    final_output[n,"c3_start"] = camera_three_mins[1]; final_output[n,"c3_end"] = camera_three_mins[2]}
-               if (length(camera_four) > 0) {
-                    camera_four_mins = round(range(runner_track[camera_four,"time_in_seconds"])/60,2)
-                    final_output[n,"c4_start"] = camera_four_mins[1]; final_output[n,"c4_end"] = camera_four_mins[2]}
-               
-          }
-          
-          ## replace Inf and -Inf by NA
-          final_output[sapply(final_output, is.infinite)] <- NA
-          
-          if (nrow(final_output) > 1) {
-               ## transform into 60 second minutes
-               final_output[,c("c1_start", "c1_end", "c2_start", "c2_end", "c3_start", "c3_end", "c4_start", "c4_end")] = apply(final_output[,c("c1_start", "c1_end", "c2_start", "c2_end", "c3_start", "c3_end", "c4_start", "c4_end")], 2, function(x) round(floor(x)+((x %% 1)*0.6),2))
           }
           
           ## return output
@@ -770,15 +726,13 @@
                     tracks_under_cameras[[n]] = runner_camera_df[which(apply(runner_camera_df[,c(2:ncol(runner_camera_df)), drop=FALSE],1, function(x) sum(x, na.rm = TRUE)) != 0),,drop=FALSE]
                     
                     ## change the symbol in cols to fill while watching students
-                    tracks_under_cameras[[n]][,c("c1_start_shape",
-                                                 "c1_end_shape",
+                    tracks_under_cameras[[n]][,c("c1_end_shape",
                                                  "c2_start_shape",
                                                  "c2_end_shape",
                                                  "c3_start_shape",
                                                  "c3_end_shape",
                                                  "c4_start_shape",
-                                                 "c4_end_shape")][is.na(tracks_under_cameras[[n]][,c("c1_start_shape",
-                                                                                                     "c1_end_shape",
+                                                 "c4_end_shape")][is.na(tracks_under_cameras[[n]][,c("c1_end_shape",
                                                                                                      "c2_start_shape",
                                                                                                      "c2_end_shape",
                                                                                                      "c3_start_shape",
