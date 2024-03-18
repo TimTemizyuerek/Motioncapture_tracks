@@ -15,6 +15,10 @@
      dir_data = "C:/Users/timte/Desktop/Konstanz/Chain transport/assembled tsv files/"
      # dir_github = "C:/Users/timte/Desktop/Konstanz/Chain transport/Github repository/"
      
+     ## automate for several files
+     data_names = list.files(dir_data, pattern="REDUCED.tsv")
+     data_dates = substr(data_names,1,8)
+     
      ## custom functions
      
      ## make raw dataframe into concise matrix (I am speed)
@@ -536,10 +540,6 @@
      
      ## load post awk script concise data ####
           
-          ## automate for several files
-          data_names = list.files(dir_data, pattern="REDUCED.tsv")
-          data_dates = substr(data_names,1,8)
-          
           ## loop through files
           for (n in 1:length(data_names)) {
                
@@ -742,8 +742,7 @@
                                                                                                      "c4_end_shape")])] = "unknown"
                     
                     ## export table
-                    write.csv(tracks_under_cameras[[n]], file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera_watched.csv", sep=""))
-                    write.table(tracks_under_cameras[[n]], file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera.txt", sep=""), sep="\t")
+                    write.csv(tracks_under_cameras[[n]], file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera.csv", sep=""))
                     
                } else if (is.na(runner_track[1,1])) {
                     
@@ -761,7 +760,6 @@
                                                                  
                     ## export dummy
                     write.csv(dummy, file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera.csv", sep=""))
-                    write.table(dummy, file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera.txt", sep=""), sep="\t")
                     
                }
           }
