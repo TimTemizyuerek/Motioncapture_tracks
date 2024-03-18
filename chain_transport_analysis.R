@@ -440,14 +440,15 @@
                
                
                ## c4_start
-               camera_four_start = which(runner_track[,"X"] > (u_camera_cutoff[[4]][1]-10) & runner_track[,"X"] < (u_camera_cutoff[[4]][1]+10) &
-                                             runner_track[,"Y"] > u_camera_cutoff[[4]][3] & runner_track[,"Y"] < u_camera_cutoff[[4]][4])
-               final_output[n,"c4_start"] = round(max((runner_track[camera_four_start,"time_in_seconds"])/60),2)
+               camera_four_start = which(runner_track[,"X"] > (u_camera_cutoff[[4]][2]-10) & runner_track[,"X"] < (u_camera_cutoff[[4]][2]+10) &
+                                              runner_track[,"Y"] > u_camera_cutoff[[4]][3] & runner_track[,"Y"] < u_camera_cutoff[[4]][4])
+               final_output[n,"c4_start"] = round(min((runner_track[camera_four_start,"time_in_seconds"])/60),2)
                
                ## c4_end
-               camera_four_end = which(runner_track[,"X"] > (u_camera_cutoff[[4]][2]-10) & runner_track[,"X"] < (u_camera_cutoff[[4]][2]+10) &
-                                           runner_track[,"Y"] > u_camera_cutoff[[4]][3] & runner_track[,"Y"] < u_camera_cutoff[[4]][4])
-               final_output[n,"c4_end"] = round(min((runner_track[camera_four_end,"time_in_seconds"])/60),2)
+               camera_four_end = which(runner_track[,"X"] > (u_camera_cutoff[[4]][1]-10) & runner_track[,"X"] < (u_camera_cutoff[[4]][1]+10) &
+                                            runner_track[,"Y"] > u_camera_cutoff[[4]][3] & runner_track[,"Y"] < u_camera_cutoff[[4]][4])
+               final_output[n,"c4_end"] = round(max((runner_track[camera_four_end,"time_in_seconds"])/60),2)
+               
                                                
           }
                
@@ -741,7 +742,7 @@
                                                                                                      "c4_end_shape")])] = "unknown"
                     
                     ## export table
-                    write.csv(tracks_under_cameras[[n]], file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera.csv", sep=""))
+                    write.csv(tracks_under_cameras[[n]], file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera_watched.csv", sep=""))
                     write.table(tracks_under_cameras[[n]], file=paste(dir_data,substr(track_files[n], 1,nchar(track_files[n])-10),"_under_camera.txt", sep=""), sep="\t")
                     
                } else if (is.na(runner_track[1,1])) {
@@ -766,6 +767,108 @@
           }
           
           
+          
+          
+          
+          ## WIP
+          video_matching_erik_list = list(length(unique(data_dates)))
+          ## load and process video scoring data
+          for (n in 1:(length(unique(data_dates)))) {
+          
+               ## load video scoring data
+               video_data = read.table(file = paste(dir_data,"master_",unique(data_dates)[n],".txt", sep=""),sep = '\t', header=TRUE, fill=FALSE)
+
+               ## create list for split dataframes
+               runner_dfs = vector(mode="list", length=2)
+          
+               ## extract brakes
+               breaks = which(video_data[,1] == "BREAK")
+               
+               ## split dataframes
+               if (length(breaks) == 0) { runner_dfs[[1]] = video_data
+               } else if (length(breaks) == 1){ runner_dfs[[1]] = video_data[1:breaks[1],]; runner_dfs[[2]] = video_data[breaks[1]:nrow(video_data),]
+               } else if (length(breaks) == 2){ runner_dfs[[1]] = video_data[1:breaks[1],]; runner_dfs[[2]] = video_data[breaks[1]:breaks[2],]; runner_dfs[[3]] = video_data[breaks[2]:nrow(video_data),]}
+               
+               ## reset time col in the split dfs
+               for (m in 1:(length(breaks)+1)) runner_dfs[[m]][,"Time"] = 1:nrow(runner_dfs[[m]])
+               
+               ## find shape in each col
+               shape_by_col = vector(mode="list", length=length(breaks)+1)
+               for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = apply(runner_dfs[[m]][,2:ncol(runner_dfs[[m]])], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE") == TRUE))
+               for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = as.numeric(which(shape_by_col[[m]] > 0))+1
+               
+               ## create output 
+               video_entry_exit_list = vector(mode="list", length=length(breaks)+1)
+               
+               ## extract shape and store time and shape in df
+               for (k in 1:(length(breaks)+1)) {
+                    
+                    ## extract cols with a shape
+                    runner = runner_dfs[[k]][,c(1,shape_by_col[[k]])]
+                    
+                    ## extract entry time
+                    runner_entry_time = runner[as.numeric(apply(runner[,2:ncol(runner), drop=FALSE], 2, function(x) which(x == "ENTER_RIGHT"))),"Time"]
+                    runner_entry_time = runner_entry_time[!is.na(runner_entry_time)]
+                    
+                    ## find cols with "ENTER_RIGHT"
+                    cols_with_enter_right = names(which(apply(runner[,2:ncol(runner), drop=FALSE], 2, function(x) which(x == "ENTER_RIGHT")) != 0))
+                    
+                    ## extract exit time
+                    runner_exit_time = runner[as.numeric(apply(runner[,cols_with_enter_right,drop=FALSE], 2, function(x) which(x == "EXIT_LEFT"))),"Time"]
+                    
+                    ## extract shape
+                    runner_shape = runner[unique(apply(runner[,cols_with_enter_right,drop=FALSE], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE")))),cols_with_enter_right]
+                    runner_shape = as.vector(unlist(runner_shape)[which(unlist(runner_shape) != "")])
+                    runner_shape = runner_shape[which(runner_shape %in% c("STAR", "HEART", "CIRCLE"))]
+                    
+                    ## combine in df and transform to minutes
+                    if (!identical(runner_entry_time,integer(0)) & !identical(runner_exit_time,integer(0))) {
+                         video_entry_exit_list[[k]] = data.frame("entry_time" = round(runner_entry_time*0.00333,3),"shape" = runner_shape,"exit_time" = round(runner_exit_time*0.00333,3))
+                    } else if (identical(runner_entry_time,integer(0))) {
+                         video_entry_exit_list[[k]] = data.frame("entry_time" = NA,"shape" = runner_shape,"exit_time" = round(runner_exit_time*0.00333,3))
+                    } else if (identical(runner_exit_time,integer(0))) {
+                         video_entry_exit_list[[k]] = data.frame("entry_time" = NA,"shape" = runner_shape,"exit_time" = NA)
+                    }
+                    
+                                                      
+               }
+               
+               video_matching_erik_list[[n]] = video_entry_exit_list
+          }
+          names(video_matching_erik_list) = unique(data_dates)
+          ## test to be implemented!
+          ## video_entry_exit_list should have the same length as tracks_under_cameras
+          
+          
+          video_matching_erik_list[[1]]
+          
+          
+          
+          
+          
+          
+          
+          # match tracking data to video data
+          for (n in 1:length(output_list_df)) {
+               
+               ## extract data to match
+               runner_video_entry = video_entry_exit_list[[n]][,"entry_time"]
+               runner_video_shape = video_entry_exit_list[[n]][,"shape"]
+               runner_track_entry = tracks_under_cameras[[n]][,"c4_start"]#[!is.na(tracks_under_cameras[[n]][,"c4_start"])]
+               
+               ## match 
+               runner_matcher = vector()
+               for (m in 1:length(runner_video_entry)) runner_matcher[m] = which(abs(runner_video_entry[m] - runner_track_entry) == min(abs(runner_video_entry[m] - runner_track_entry), na.rm =TRUE))
+               
+               ## make new col
+               runner_new_col = rep(NA, length(runner_track_entry))
+               for (m in 1:length(runner_matcher)) runner_new_col[runner_matcher[m]] = runner_video_shape[m]
+               
+               ## make df to prepare for text
+               tracks_under_cameras[[n]] = as.data.frame(tracks_under_cameras[[n]]); c4_shape = runner_new_col
+               tracks_under_cameras[[n]] = cbind(tracks_under_cameras[[n]],c4_shape)
+          }
+     
           
           
           ## find track length
@@ -812,88 +915,6 @@
           ## TLDR: i guess it makes sense to filter for length
           
           
-          
-          ## WIP
-          ## load and process video scoring data
-          for (n in 1:length(data_dates)) {
-          
-               ## load video scoring data
-               video_data = read.table(file = paste(dir_data,data_dates[n],"_master.txt", sep=""),sep = '\t', header=TRUE, fill=FALSE)
-
-               ## create list for split dataframes
-               runner_dfs = vector(mode="list", length=2)
-          
-               ## extract brakes
-               breaks = which(video_data[,1] == "BREAK")
-               
-               ## split dataframes
-               if (length(breaks) == 0) { runner_dfs[[1]] = video_data
-               } else if (length(breaks) == 1){ runner_dfs[[1]] = video_data[1:breaks[1],]; runner_dfs[[2]] = video_data[breaks[1]:nrow(video_data),]
-               } else if (length(breaks) == 2){ runner_dfs[[1]] = video_data[1:breaks[1],]; runner_dfs[[2]] = video_data[breaks[1]:breaks[2],]; runner_dfs[[3]] = video_data[breaks[2]:nrow(video_data),]}
-               
-               ## reset time col in the split dfs
-               for (m in 1:(length(breaks)+1)) runner_dfs[[m]][,"Time"] = 1:nrow(runner_dfs[[m]])
-               
-               ## find shape in each col
-               shape_by_col = vector(mode="list", length=length(breaks)+1)
-               for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = apply(runner_dfs[[m]][,2:ncol(runner_dfs[[m]])], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE") == TRUE))
-               for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = as.numeric(which(shape_by_col[[m]] > 0))+1
-               
-               ## create output 
-               video_entry_exit_list = vector(mode="list", length=length(breaks)+1)
-               
-               ## extract shape and store time and shape in df
-               for (k in 1:(length(breaks)+1)) {
-                    
-                    ## extract cols with a shape
-                    runner = runner_dfs[[k]][,c(1,shape_by_col[[k]])]
-                    
-                    ## extract entry time
-                    runner_entry_time =  runner[as.numeric(apply(runner[,2:ncol(runner)], 2, function(x) which(x == "ENTER_RIGHT"))),"Time"]
-                    runner_entry_time = runner_entry_time[!is.na(runner_entry_time)]
-                    
-                    ## find cols with "ENTER_RIGHT"
-                    cols_with_enter_right = names(which(apply(runner[,2:ncol(runner)], 2, function(x) which(x == "ENTER_RIGHT")) != 0))
-                    
-                    ## extract exit time
-                    runner_exit_time = runner[as.numeric(apply(runner[,cols_with_enter_right], 2, function(x) which(x == "EXIT_LEFT"))),"Time"]
-                    
-                    ## extract shape
-                    runner_shape = runner[unique(apply(runner[,cols_with_enter_right], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE")))),cols_with_enter_right]
-                    runner_shape = as.vector(unlist(runner_shape)[which(unlist(runner_shape) != "")])
-                    runner_shape = runner_shape[which(runner_shape %in% c("STAR", "HEART", "CIRCLE"))]
-                    
-                    ## combine in df and transform to minutes
-                    video_entry_exit_list[[k]] = data.frame("entry_time" = runner_entry_time*0.00333,
-                                                     "shape" = runner_shape,
-                                                     "exit_time" = runner_exit_time*0.00333)
-               }
-          }
-          
-          ## test to be implemented!
-          ## video_entry_exit_list should have the same length as tracks_under_cameras
-          
-          ## match tracking data to video data
-          for (n in 1:length(output_list_df)) {
-               
-               ## extract data to match
-               runner_video_entry = video_entry_exit_list[[n]][,"entry_time"]
-               runner_video_shape = video_entry_exit_list[[n]][,"shape"]
-               runner_track_entry = tracks_under_cameras[[n]][,"c4_start"]#[!is.na(tracks_under_cameras[[n]][,"c4_start"])]
-               
-               ## match 
-               runner_matcher = vector()
-               for (m in 1:length(runner_video_entry)) runner_matcher[m] = which(abs(runner_video_entry[m] - runner_track_entry) == min(abs(runner_video_entry[m] - runner_track_entry), na.rm =TRUE))
-               
-               ## make new col
-               runner_new_col = rep(NA, length(runner_track_entry))
-               for (m in 1:length(runner_matcher)) runner_new_col[runner_matcher[m]] = runner_video_shape[m]
-               
-               ## make df to prepare for text
-               tracks_under_cameras[[n]] = as.data.frame(tracks_under_cameras[[n]]); c4_shape = runner_new_col
-               tracks_under_cameras[[n]] = cbind(tracks_under_cameras[[n]],c4_shape)
-          }
-     
           
      ## testing ####
           
