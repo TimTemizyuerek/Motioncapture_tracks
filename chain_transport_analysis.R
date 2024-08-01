@@ -560,7 +560,7 @@
                ## use Z values of the trail outline + 10 cm buffer
                raw_trail_outline_data = read.table(file = paste(dir_data, "Trail_outline.tsv", sep=""), sep = '\t', header=FALSE, skip=12, fill=FALSE, nrows=2)
                clean_trail_data = m.concise.dataframe(raw_trail_outline_data); clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]; clean_trail_data = clean_trail_data[-78,]
-               ## plot(clean_trail_data[,"X"], clean_trail_data[,"Y"])
+               ##plot(clean_trail_data[,"X"], clean_trail_data[,"Y"])
                ## generate cutoff values
                low_cutoff_z = min(clean_trail_data[,"Z"]) - 100; high_cutoff_z = max(clean_trail_data[,"Z"]) + 100
                ## extract affected IDs
@@ -685,15 +685,26 @@
                } else if (nrow(runner_last) == 0) {
                     
                     ## export tracks
-                    dummy =  matrix(NA, nrow=1, ncol=8); colnames(dummy) = c("frame_number", "time_in_deciseconds", "ID", "X", "Y", "Z", "distance", "ID_track")
+                    dummy =  matrix(NA, nrow=1, ncol=8); colnames(dummy) = c("frame_number", "time_in_seconds", "ID", "X", "Y", "Z", "distance", "ID_track")
                     write.table(dummy, file=paste(dir_data,substr(data_names[n], 1,nchar(data_names[n])-12),"_track.txt", sep=""), sep="\t")
                }
           }
      
-     ## track camera matching ####
+     ## track camera matching WIP ####
           
           ## load files
           track_files = list.files(dir_data, pattern="_track.txt")
+          
+          ## count raw tracklets
+          track_num_raw = 0
+          first_files = list.files(dir_data, pattern="_first.txt")
+          for (n in 1:length(first_files)){runner_track = read.table(paste(dir_data,first_files[n], sep="")); track_num_raw = track_num_raw+length(unique(runner_track$ID))}
+          
+          ## count tracklets in stitching
+          track_num = 0
+          for (n in 1:length(track_files)){runner_track = read.table(paste(dir_data,track_files[n], sep="")); track_num = track_num+length(unique(runner_track$ID))}
+     
+          
           
           ## load camera_fov
           camera_fov = read.table(file = paste(dir_data, "camera_fov.txt", sep=""), sep = '\t')
@@ -765,9 +776,6 @@
           }
           
           
-          
-          
-          
           ## WIP
           video_matching_erik_list = list(length(unique(data_dates)))
           ## load and process video scoring data
@@ -837,7 +845,19 @@
           ## test to be implemented!
           ## video_entry_exit_list should have the same length as tracks_under_cameras
           
+          for (m in 1:length(video_matching_erik_list)) {
+               
+               for (o in 1:length(video_matching_erik_list[[m]])) {
+                    
+                    filename = paste(names(video_matching_erik_list)[m],"_video_",o,"_erik.csv",sep="")
+                    write.csv(video_matching_erik_list[[m]][[o]], file = filename)
+               }
+          }
           
+          lapply(video_matching_erik_list)
+          
+          
+          names(video_matching_erik_list)[1]
           video_matching_erik_list[[1]]
           
           
