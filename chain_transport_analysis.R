@@ -690,7 +690,7 @@
                }
           }
      
-     ## track camera matching WIP ####
+     ## track camera matching ####
           
           ## load files
           track_files = list.files(dir_data, pattern="_track.txt")
@@ -704,8 +704,6 @@
           track_num = 0
           for (n in 1:length(track_files)){runner_track = read.table(paste(dir_data,track_files[n], sep="")); track_num = track_num+length(unique(runner_track$ID))}
      
-          
-          
           ## load camera_fov
           camera_fov = read.table(file = paste(dir_data, "camera_fov.txt", sep=""), sep = '\t')
           
@@ -775,302 +773,58 @@
                }
           }
           
-          
-          ## WIP
-          video_matching_erik_list = list(length(unique(data_dates)))
-          ## load and process video scoring data
-          for (n in 1:(length(unique(data_dates)))) {
-          
-               ## load video scoring data
-               video_data = read.table(file = paste(dir_data,"master_",unique(data_dates)[n],".txt", sep=""),sep = '\t', header=TRUE, fill=FALSE)
-
-               ## create list for split dataframes
-               runner_dfs = vector(mode="list", length=2)
-          
-               ## extract brakes
-               breaks = which(video_data[,1] == "BREAK")
-               
-               ## split dataframes
-               if (length(breaks) == 0) { runner_dfs[[1]] = video_data
-               } else if (length(breaks) == 1){ runner_dfs[[1]] = video_data[1:breaks[1],]; runner_dfs[[2]] = video_data[breaks[1]:nrow(video_data),]
-               } else if (length(breaks) == 2){ runner_dfs[[1]] = video_data[1:breaks[1],]; runner_dfs[[2]] = video_data[breaks[1]:breaks[2],]; runner_dfs[[3]] = video_data[breaks[2]:nrow(video_data),]}
-               
-               ## reset time col in the split dfs
-               for (m in 1:(length(breaks)+1)) runner_dfs[[m]][,"Time"] = 1:nrow(runner_dfs[[m]])
-               
-               ## find shape in each col
-               shape_by_col = vector(mode="list", length=length(breaks)+1)
-               for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = apply(runner_dfs[[m]][,2:ncol(runner_dfs[[m]])], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE") == TRUE))
-               for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = as.numeric(which(shape_by_col[[m]] > 0))+1
-               
-               ## create output 
-               video_entry_exit_list = vector(mode="list", length=length(breaks)+1)
-               
-               ## extract shape and store time and shape in df
-               for (k in 1:(length(breaks)+1)) {
-                    
-                    ## extract cols with a shape
-                    runner = runner_dfs[[k]][,c(1,shape_by_col[[k]])]
-                    
-                    ## extract entry time
-                    runner_entry_time = runner[as.numeric(apply(runner[,2:ncol(runner), drop=FALSE], 2, function(x) which(x == "ENTER_RIGHT"))),"Time"]
-                    runner_entry_time = runner_entry_time[!is.na(runner_entry_time)]
-                    
-                    ## find cols with "ENTER_RIGHT"
-                    cols_with_enter_right = names(which(apply(runner[,2:ncol(runner), drop=FALSE], 2, function(x) which(x == "ENTER_RIGHT")) != 0))
-                    
-                    ## extract exit time
-                    runner_exit_time = runner[as.numeric(apply(runner[,cols_with_enter_right,drop=FALSE], 2, function(x) which(x == "EXIT_LEFT"))),"Time"]
-                    
-                    ## extract shape
-                    runner_shape = runner[unique(apply(runner[,cols_with_enter_right,drop=FALSE], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE")))),cols_with_enter_right]
-                    runner_shape = as.vector(unlist(runner_shape)[which(unlist(runner_shape) != "")])
-                    runner_shape = runner_shape[which(runner_shape %in% c("STAR", "HEART", "CIRCLE"))]
-                    
-                    ## combine in df and transform to minutes
-                    if (!identical(runner_entry_time,integer(0)) & !identical(runner_exit_time,integer(0))) {
-                         video_entry_exit_list[[k]] = data.frame("entry_time" = round(runner_entry_time*0.00333,3),"shape" = runner_shape,"exit_time" = round(runner_exit_time*0.00333,3))
-                    } else if (identical(runner_entry_time,integer(0))) {
-                         video_entry_exit_list[[k]] = data.frame("entry_time" = NA,"shape" = runner_shape,"exit_time" = round(runner_exit_time*0.00333,3))
-                    } else if (identical(runner_exit_time,integer(0))) {
-                         video_entry_exit_list[[k]] = data.frame("entry_time" = NA,"shape" = runner_shape,"exit_time" = NA)
-                    }
-                    
-                                                      
-               }
-               
-               video_matching_erik_list[[n]] = video_entry_exit_list
-          }
-          names(video_matching_erik_list) = unique(data_dates)
-          ## test to be implemented!
-          ## video_entry_exit_list should have the same length as tracks_under_cameras
-          
-          for (m in 1:length(video_matching_erik_list)) {
-               
-               for (o in 1:length(video_matching_erik_list[[m]])) {
-                    
-                    filename = paste(names(video_matching_erik_list)[m],"_video_",o,"_erik.csv",sep="")
-                    write.csv(video_matching_erik_list[[m]][[o]], file = filename)
-               }
-          }
-          
-          lapply(video_matching_erik_list)
-          
-          
-          names(video_matching_erik_list)[1]
-          video_matching_erik_list[[1]]
-          
-          
-          
-          
-          
-          
-          
-          # match tracking data to video data
-          for (n in 1:length(output_list_df)) {
-               
-               ## extract data to match
-               runner_video_entry = video_entry_exit_list[[n]][,"entry_time"]
-               runner_video_shape = video_entry_exit_list[[n]][,"shape"]
-               runner_track_entry = tracks_under_cameras[[n]][,"c4_start"]#[!is.na(tracks_under_cameras[[n]][,"c4_start"])]
-               
-               ## match 
-               runner_matcher = vector()
-               for (m in 1:length(runner_video_entry)) runner_matcher[m] = which(abs(runner_video_entry[m] - runner_track_entry) == min(abs(runner_video_entry[m] - runner_track_entry), na.rm =TRUE))
-               
-               ## make new col
-               runner_new_col = rep(NA, length(runner_track_entry))
-               for (m in 1:length(runner_matcher)) runner_new_col[runner_matcher[m]] = runner_video_shape[m]
-               
-               ## make df to prepare for text
-               tracks_under_cameras[[n]] = as.data.frame(tracks_under_cameras[[n]]); c4_shape = runner_new_col
-               tracks_under_cameras[[n]] = cbind(tracks_under_cameras[[n]],c4_shape)
-          }
-     
-          
-          
-          ## find track length
-          
-          ## extract tracks that pass under the cameras
-          under_camera_files = list.files(dir_data, pattern="under_camera.txt")
-          under_camera_tracks = list.files(dir_data, pattern="_track.txt")
-          
-          ## list for track IDs
-          track_IDs = vector(mode='list', length=length(under_camera_files))
-          track_length = vector(mode='list', length=length(under_camera_files))
-          
-          ## extract tracks that pass under camera
-          for (n in 1:length(under_camera_files)){
-               
-               ## extract IDs
-               runner_camera = read.table(paste(dir_data,under_camera_files[n], sep=""),sep = '\t', header=TRUE)
-               track_IDs[[n]] = runner_camera[,"track_ID"]
-               
-          }
-          
-          ## counts tracks
-          for (n in 1:length(track_IDs)){
-               
-               ## load track
-               runner_tracks = as.data.frame(read.table(paste(dir_data,under_camera_tracks[n], sep=""),sep = '\t', header=TRUE))
-               
-               ## create vector for storage
-               runner_vec = rep(NA, length(track_IDs[[n]]))
-               
-               ## count length of each track
-               for (m in 1:length(track_IDs[[n]])){
-                    
-                    ## count track
-                    runner_vec[m] = length(which(runner_tracks[,"ID_track"] == track_IDs[[n]][m]))
-                    
-               }
-               
-               ## store in list
-               track_length[[n]] = runner_vec
-          }
-          
-          ## extract the length of each track that passes under the camera
-          ## TLDR: i guess it makes sense to filter for length
-          
-          
-          
      ## testing ####
-          
-          
-          ## how much are very short tracklets used
-          ID_track = unique(runner_track[,"ID_track"])
-          
-          kek = vector()
-          
-          for (n in 1:length(ID_track)) {
-               
-               ## extract runner track
-               runner = runner_track[which(runner_track[,"ID_track"] == ID_track[n]),]
-               
-               kek = c(kek,as.vector(table(runner[,"ID"])))
-               
-          }
-          
-          hist(log(kek), breaks=10, main="tracklet length in good tracks",
-               xlab = "log frame number of tracklet")
-          abline(v=log(10))
-          text(log(10), 250, "10 frames")
-          abline(v=log(100))
-          text(log(100), 250, "100 frames")
-          
           
           ## Are there overlapping time frame values in the tracks?
           overlapping_time_test = function(u_track_data){
                
-               if ((sum(sapply(u_track_data, function(x) length(unique(x[,"frame_number"])) == nrow(x))) != length(track_data)) == FALSE) {
-                    print("TEST PASSED: There are no overlapping time frame values")
-               } else {
+               if (sum(table(unique(x[,"frame_number"]))) != length(unique(x[,"frame_number"]))) {
                     print("TEST FAILED: There are overlapping time frame values")
-                    
                }
           }
-          overlapping_time_test(track_data)
-          
-          ## Is any tracklet used multiple times?
-          tracklets_used_multiple_times_test = function(u_track_data) {
-               if (sum(duplicated(unlist(lapply(u_track_data, function(x) unique(x[,"ID"]))))) == 0)
-                    print("TEST PASSED: no tracklet was used in more than one track")
-               else {
-                    print("TEST FAILED: at least one tracklet was used on two tracks")
-               }
+          ## run the files through the test
+          track_files = list.files(dir_data, pattern="_track.txt")
+          for (n in 1:length(track_files)){
                
+               ## read file 
+               file_runner = read.table(paste(dir_data,track_files[n], sep=""))
+               
+               ## run through tracks in file
+               for (m in unique(file_runner[,"ID_track"])){
+                    
+                    ## read track
+                    track_runner = file_runner[which(file_runner[,"ID_track"] == m),]
+                    
+                    ## run test
+                    overlapping_time_test(track_runner)
+               }
           }
-          tracklets_used_multiple_times_test(track_data)
-          
-          ## Any tracklets fell through the stitching process?
-          unstitched_tracklets_test = function(u_track_data, u_raw_data){
-               
-               ## tracklets from tracks and raw data
-               from_tracks = length(unlist(lapply(u_track_data, function(x) unique(x[,"ID"]))))
-               from_fulldata = length(unique(u_raw_data[,"ID"]))
-               
-               if (length(from_tracks) == length(from_fulldata)){
-                    print("TEST PASSED: all tracklets have been used in the stitching process")
-               } else {
-                    print("TEST FAILED: the number of tracklets in raw data does not match the number of tracklets post stitching")
-               }
-               
-          }
-          unstitched_tracklets_test(track_data, concise_data)
-          
-          ## Does the distance (normalized by time) between tracklets exceed 30?
-          stitched_distance_test = function(u_track_data, max_stitch_distance) {
-               
-               distance_list = vector(mode='list', length=length(u_track_data))
-               for (n in 1:length(u_track_data)) {
-                    
-                    ## run through IDs
-                    runner_track = u_track_data[[n]]
-                    
-                    ## find first instance of tracklet
-                    first_vec = vector()
-                    for (m in unique(runner_track[,"ID"])) first_vec = c(first_vec, head(which(runner_track[,"ID"] == m),1))
-                    
-                    ## find last instance of tracklet
-                    last_vec = vector()
-                    for (k in unique(runner_track[,"ID"])) last_vec = c(last_vec, tail(which(runner_track[,"ID"] == k),1))
-                    
-                    ## calculate distance between last and first
-                    distance_vec = vector()
-                    for (o in 1:length(last_vec)) {
-                         
-                         ## end of track; start of track
-                         runner_end = runner_track[last_vec[o],,drop=FALSE]; runner_start = runner_track[first_vec[o+1],,drop=FALSE]
-                         
-                         ## calculate distance: sqrt((x1-x2)^2+(y1-y2)^2)
-                         raw_distance = round( sqrt((as.numeric(runner_start[,"X"])-as.numeric(runner_end[,"X"]))^2+(as.numeric(runner_start[,"Y"])-as.numeric(runner_end[,"Y"]))^2) ,3)
-                         
-                         ## calculate difference in time
-                         time_dif = as.numeric(runner_start[,"frame_number"] - runner_end[,"frame_number"])
-                         
-                         ## normalize by time
-                         distance_vec[o] = round(raw_distance/time_dif,3)
-                    }
-                    
-                    ## collect distances in list
-                    distance_list[[n]] = distance_vec
-               }
-          
-               ## which tracks exceed the max_stitch_distance?
-               flagged_tracks = lapply(distance_list, function(x) max(x, na.rm = TRUE) >= max_stitch_distance)
-               flagged_tracks = which(flagged_tracks == TRUE)
-               
-               ## output
-               if (length(flagged_tracks) == 0){
-                    print(paste("TEST PASSED: no distance between stitched tracklets exceeds ",max_stitch_distance,"mm per time unit", sep=""))
-               } else {
-                    print(paste("TEST FAILED: these tracks", paste(flagged_tracks,collapse = ","), " exceed the distance of ",
-                                max_stitch_distance, "mm per time unit between stitched tracklets. Check stitching paramters"))
-               }
-               
-          }
-          stitched_distance_test(track_data, 50)
-          
-          ## how long are the tracks
-          plot(1:length(unlist(lapply(track_data, nrow))), sort(unlist(lapply(track_data, nrow))))
-          
-          # # plot tracks
-          # for (n in 1:length(track_data)) {
-          # 
-          #      runner_track = track_data[[n]]
-          #      palette(RColorBrewer::brewer.pal(12, "Set3"))
-          # 
-          #      ## create file for export
-          #      png(filename=paste("Track_",n,".png",sep=""))
-          # 
-          #      plot(runner_track[,"X"], runner_track[,"Y"], col=runner_track[,"ID"],pch=16, cex=1)
-          # 
-          #      ## close graphic device
-          #      dev.off()
-          # }
           
 ## 2. DATA ANALYSIS (WAITING TIMES) ----------------------------------------####
+     ## trail identification ####
      
+          runner_track = read.table(paste(dir_data, track_files[1],sep=""))
+          
+          plot(runner_track[which(runner_track[,"ID_track"] == n),][,"X"], runner_track[which(runner_track[,"ID_track"] == n),][,"Y"])
+          
+          
+          plot(1,1,xlim=c(-3500,4500), ylim=c(-2000,8300))
+          for (n in unique(runner_track[,"ID_track"])) lines(runner_track[which(runner_track[,"ID_track"] == n),][,"X"], runner_track[which(runner_track[,"ID_track"] == n),][,"Y"])
+          
+          
+          
+          library(hexbin)
+          library(RColorBrewer)
+          
+          # Make the plot
+          bin<-hexbin(runner_track[,"X"], runner_track[,"Y"], xbins=4000)
+          my_colors=colorRampPalette(rev(brewer.pal(11,'Spectral')))
+          plot(bin, main="" , colramp=my_colors , legend=F ) 
+          
+          
+          
+          
+          
      ## how often are tracks near to each other? ####
           
           ## extract stitch events
@@ -1179,6 +933,246 @@
           
           
 ## 3. ARCHIVE --------------------------------------------------------------####
+     ## old tests, not adapted to tracks in different files ####
+          ## Is any tracklet used multiple times?
+          tracklets_used_multiple_times_test = function(u_track_data) {
+               if (sum(duplicated(unlist(lapply(u_track_data, function(x) unique(x[,"ID"]))))) == 0)
+                    print("TEST PASSED: no tracklet was used in more than one track")
+               else {
+                    print("TEST FAILED: at least one tracklet was used on two tracks")
+               }
+               
+          }
+          tracklets_used_multiple_times_test(track_data)
+          
+          ## Any tracklets fell through the stitching process?
+          unstitched_tracklets_test = function(u_track_data, u_raw_data){
+               
+               ## tracklets from tracks and raw data
+               from_tracks = length(unlist(lapply(u_track_data, function(x) unique(x[,"ID"]))))
+               from_fulldata = length(unique(u_raw_data[,"ID"]))
+               
+               if (length(from_tracks) == length(from_fulldata)){
+                    print("TEST PASSED: all tracklets have been used in the stitching process")
+               } else {
+                    print("TEST FAILED: the number of tracklets in raw data does not match the number of tracklets post stitching")
+               }
+               
+          }
+          unstitched_tracklets_test(track_data, concise_data)
+          
+          ## Does the distance (normalized by time) between tracklets exceed 30?
+          stitched_distance_test = function(u_track_data, max_stitch_distance) {
+               
+               distance_list = vector(mode='list', length=length(u_track_data))
+               for (n in 1:length(u_track_data)) {
+                    
+                    ## run through IDs
+                    runner_track = u_track_data[[n]]
+                    
+                    ## find first instance of tracklet
+                    first_vec = vector()
+                    for (m in unique(runner_track[,"ID"])) first_vec = c(first_vec, head(which(runner_track[,"ID"] == m),1))
+                    
+                    ## find last instance of tracklet
+                    last_vec = vector()
+                    for (k in unique(runner_track[,"ID"])) last_vec = c(last_vec, tail(which(runner_track[,"ID"] == k),1))
+                    
+                    ## calculate distance between last and first
+                    distance_vec = vector()
+                    for (o in 1:length(last_vec)) {
+                         
+                         ## end of track; start of track
+                         runner_end = runner_track[last_vec[o],,drop=FALSE]; runner_start = runner_track[first_vec[o+1],,drop=FALSE]
+                         
+                         ## calculate distance: sqrt((x1-x2)^2+(y1-y2)^2)
+                         raw_distance = round( sqrt((as.numeric(runner_start[,"X"])-as.numeric(runner_end[,"X"]))^2+(as.numeric(runner_start[,"Y"])-as.numeric(runner_end[,"Y"]))^2) ,3)
+                         
+                         ## calculate difference in time
+                         time_dif = as.numeric(runner_start[,"frame_number"] - runner_end[,"frame_number"])
+                         
+                         ## normalize by time
+                         distance_vec[o] = round(raw_distance/time_dif,3)
+                    }
+                    
+                    ## collect distances in list
+                    distance_list[[n]] = distance_vec
+               }
+               
+               ## which tracks exceed the max_stitch_distance?
+               flagged_tracks = lapply(distance_list, function(x) max(x, na.rm = TRUE) >= max_stitch_distance)
+               flagged_tracks = which(flagged_tracks == TRUE)
+               
+               ## output
+               if (length(flagged_tracks) == 0){
+                    print(paste("TEST PASSED: no distance between stitched tracklets exceeds ",max_stitch_distance,"mm per time unit", sep=""))
+               } else {
+                    print(paste("TEST FAILED: these tracks", paste(flagged_tracks,collapse = ","), " exceed the distance of ",
+                                max_stitch_distance, "mm per time unit between stitched tracklets. Check stitching paramters"))
+               }
+               
+          }
+          stitched_distance_test(track_data, 50)
+          
+          
+     ## how much are very short tracklets used ####
+          ID_track = unique(runner_track[,"ID_track"])
+          
+          kek = vector()
+          
+          for (n in 1:length(ID_track)) {
+               
+               ## extract runner track
+               runner = runner_track[which(runner_track[,"ID_track"] == ID_track[n]),]
+               
+               kek = c(kek,as.vector(table(runner[,"ID"])))
+               
+          }
+          
+          hist(log(kek), breaks=10, main="tracklet length in good tracks",
+               xlab = "log frame number of tracklet")
+          abline(v=log(10))
+          text(log(10), 250, "10 frames")
+          abline(v=log(100))
+          text(log(100), 250, "100 frames")
+     ## Match Eriks scoring to tracks ####
+          video_matching_erik_list = list(length(unique(data_dates)))
+          ## load and process video scoring data
+          for (n in 1:(length(unique(data_dates)))) {
+               
+               ## load video scoring data
+               video_data = read.table(file = paste(dir_data,"master_",unique(data_dates)[n],".txt", sep=""),sep = '\t', header=TRUE, fill=FALSE)
+               
+               ## create list for split dataframes
+               runner_dfs = vector(mode="list", length=2)
+               
+               ## extract brakes
+               breaks = which(video_data[,1] == "BREAK")
+               
+               ## split dataframes
+               if (length(breaks) == 0) { runner_dfs[[1]] = video_data
+               } else if (length(breaks) == 1){ runner_dfs[[1]] = video_data[1:breaks[1],]; runner_dfs[[2]] = video_data[breaks[1]:nrow(video_data),]
+               } else if (length(breaks) == 2){ runner_dfs[[1]] = video_data[1:breaks[1],]; runner_dfs[[2]] = video_data[breaks[1]:breaks[2],]; runner_dfs[[3]] = video_data[breaks[2]:nrow(video_data),]}
+               
+               ## reset time col in the split dfs
+               for (m in 1:(length(breaks)+1)) runner_dfs[[m]][,"Time"] = 1:nrow(runner_dfs[[m]])
+               
+               ## find shape in each col
+               shape_by_col = vector(mode="list", length=length(breaks)+1)
+               for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = apply(runner_dfs[[m]][,2:ncol(runner_dfs[[m]])], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE") == TRUE))
+               for (m in 1:(length(breaks)+1)) shape_by_col[[m]] = as.numeric(which(shape_by_col[[m]] > 0))+1
+               
+               ## create output 
+               video_entry_exit_list = vector(mode="list", length=length(breaks)+1)
+               
+               ## extract shape and store time and shape in df
+               for (k in 1:(length(breaks)+1)) {
+                    
+                    ## extract cols with a shape
+                    runner = runner_dfs[[k]][,c(1,shape_by_col[[k]])]
+                    
+                    ## extract entry time
+                    runner_entry_time = runner[as.numeric(apply(runner[,2:ncol(runner), drop=FALSE], 2, function(x) which(x == "ENTER_RIGHT"))),"Time"]
+                    runner_entry_time = runner_entry_time[!is.na(runner_entry_time)]
+                    
+                    ## find cols with "ENTER_RIGHT"
+                    cols_with_enter_right = names(which(apply(runner[,2:ncol(runner), drop=FALSE], 2, function(x) which(x == "ENTER_RIGHT")) != 0))
+                    
+                    ## extract exit time
+                    runner_exit_time = runner[as.numeric(apply(runner[,cols_with_enter_right,drop=FALSE], 2, function(x) which(x == "EXIT_LEFT"))),"Time"]
+                    
+                    ## extract shape
+                    runner_shape = runner[unique(apply(runner[,cols_with_enter_right,drop=FALSE], 2, function(x) which(x %in% c("STAR", "HEART", "CIRCLE")))),cols_with_enter_right]
+                    runner_shape = as.vector(unlist(runner_shape)[which(unlist(runner_shape) != "")])
+                    runner_shape = runner_shape[which(runner_shape %in% c("STAR", "HEART", "CIRCLE"))]
+                    
+                    ## combine in df and transform to minutes
+                    if (!identical(runner_entry_time,integer(0)) & !identical(runner_exit_time,integer(0))) {
+                         video_entry_exit_list[[k]] = data.frame("entry_time" = round(runner_entry_time*0.00333,3),"shape" = runner_shape,"exit_time" = round(runner_exit_time*0.00333,3))
+                    } else if (identical(runner_entry_time,integer(0))) {
+                         video_entry_exit_list[[k]] = data.frame("entry_time" = NA,"shape" = runner_shape,"exit_time" = round(runner_exit_time*0.00333,3))
+                    } else if (identical(runner_exit_time,integer(0))) {
+                         video_entry_exit_list[[k]] = data.frame("entry_time" = NA,"shape" = runner_shape,"exit_time" = NA)
+                    }
+                    
+                    
+               }
+               
+               video_matching_erik_list[[n]] = video_entry_exit_list
+          }
+          names(video_matching_erik_list) = unique(data_dates)
+          ## test to be implemented!
+          ## video_entry_exit_list should have the same length as tracks_under_cameras
+          for (m in 1:length(video_matching_erik_list)) {
+               
+               for (o in 1:length(video_matching_erik_list[[m]])) {
+                    
+                    filename = paste(names(video_matching_erik_list)[m],"_video_",o,"_erik.csv",sep="")
+                    write.csv(video_matching_erik_list[[m]][[o]], file = filename)
+               }
+          }
+          
+          # match tracking data to video data
+          for (n in 1:length(output_list_df)) {
+               
+               ## extract data to match
+               runner_video_entry = video_entry_exit_list[[n]][,"entry_time"]
+               runner_video_shape = video_entry_exit_list[[n]][,"shape"]
+               runner_track_entry = tracks_under_cameras[[n]][,"c4_start"]#[!is.na(tracks_under_cameras[[n]][,"c4_start"])]
+               
+               ## match 
+               runner_matcher = vector()
+               for (m in 1:length(runner_video_entry)) runner_matcher[m] = which(abs(runner_video_entry[m] - runner_track_entry) == min(abs(runner_video_entry[m] - runner_track_entry), na.rm =TRUE))
+               
+               ## make new col
+               runner_new_col = rep(NA, length(runner_track_entry))
+               for (m in 1:length(runner_matcher)) runner_new_col[runner_matcher[m]] = runner_video_shape[m]
+               
+               ## make df to prepare for text
+               tracks_under_cameras[[n]] = as.data.frame(tracks_under_cameras[[n]]); c4_shape = runner_new_col
+               tracks_under_cameras[[n]] = cbind(tracks_under_cameras[[n]],c4_shape)
+          }
+     ## find track length ####
+          ## extract tracks that pass under the cameras
+          under_camera_files = list.files(dir_data, pattern="under_camera.csv")
+          under_camera_tracks = list.files(dir_data, pattern="_track.txt")
+          
+          ## list for track IDs
+          track_IDs = vector(mode='list', length=length(under_camera_files))
+          track_length = vector(mode='list', length=length(under_camera_files))
+          
+          ## extract tracks that pass under camera
+          for (n in 1:length(under_camera_files)){
+               
+               ## extract IDs
+               runner_camera = read.table(paste(dir_data,under_camera_files[n], sep=""),sep = '\t', header=TRUE)
+               track_IDs[[n]] = runner_camera[,"track_ID"]
+               
+          }
+          
+          ## counts tracks
+          for (n in 1:length(track_IDs)){
+               
+               ## load track
+               runner_tracks = as.data.frame(read.table(paste(dir_data,under_camera_tracks[n], sep=""),sep = '\t', header=TRUE))
+               
+               ## create vector for storage
+               runner_vec = rep(NA, length(track_IDs[[n]]))
+               
+               ## count length of each track
+               for (m in 1:length(track_IDs[[n]])){
+                    
+                    ## count track
+                    runner_vec[m] = length(which(runner_tracks[,"ID_track"] == track_IDs[[n]][m]))
+                    
+               }
+               
+               ## store in list
+               track_length[[n]] = runner_vec
+          }
+          
+          ## extract the length of each track that passes under the camera
+          ## TLDR: i guess it makes sense to filter for length
      ## load raw data and transform to concise matrix ####
           
           ## automate for several files
