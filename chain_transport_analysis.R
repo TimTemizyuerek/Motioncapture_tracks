@@ -600,7 +600,6 @@
                rm(runner_concise_data)
           }
           
-          
      ## extract first and last datapoint for each tracklet ####
           
           ## loop through files
@@ -802,24 +801,71 @@
           
 ## 2. DATA ANALYSIS (WAITING TIMES) ----------------------------------------####
      ## trail identification ####
-     
+          
+          ## load data
+          track_files = list.files(dir_data, pattern="_track.txt")
           runner_track = read.table(paste(dir_data, track_files[1],sep=""))
-          
-          plot(runner_track[which(runner_track[,"ID_track"] == n),][,"X"], runner_track[which(runner_track[,"ID_track"] == n),][,"Y"])
-          
-          
           plot(1,1,xlim=c(-3500,4500), ylim=c(-2000,8300))
           for (n in unique(runner_track[,"ID_track"])) lines(runner_track[which(runner_track[,"ID_track"] == n),][,"X"], runner_track[which(runner_track[,"ID_track"] == n),][,"Y"])
           
           
+          ## the window approach
+               ## cut runner window from upper_x, lower_x, upper_y and lower_y
+               upper_x=1800;lower_x=1400
+               upper_y=2250;lower_y=1850
+               runner_window = runner_track[Reduce(intersect, list(which(runner_track[,"X"]<upper_x),which(runner_track[,"X"]>lower_x),which(runner_track[,"Y"]<upper_y),which(runner_track[,"Y"]>lower_y))),]
+               ## compute means
+               mean_x = mean(runner_window[,"X"])
+               mean_y = mean(runner_window[,"Y"])
+               ## plot
+               plot(runner_window[,"X"], runner_window[,"Y"])
+               abline(h=mean_y, col="red")
+               abline(v=mean_x, col="red")
           
-          library(hexbin)
-          library(RColorBrewer)
           
-          # Make the plot
-          bin<-hexbin(runner_track[,"X"], runner_track[,"Y"], xbins=4000)
-          my_colors=colorRampPalette(rev(brewer.pal(11,'Spectral')))
-          plot(bin, main="" , colramp=my_colors , legend=F ) 
+          ## the reference trail approach (to guide window)
+               ## reduce resolution (frame number) to 0.5fps
+               runner_track = runner_track[which(runner_track[,"frame_number"] %in% seq(from=0, to=nrow(runner_track), by=20)),]
+               ## find reference trail
+               ref_trail = runner_track[which(runner_track[,"ID_track"]==29),]
+               ## plot(runner_track[which(runner_track[,"ID_track"]==29),"X"], runner_track[which(runner_track[,"ID_track"]==29),"Y"])
+               ## window size in space
+               window_size = 50
+               ## run through all datapoints ~ 2 mins
+               for (n in 1:nrow(ref_trail)){
+                    ## cut trails in window
+                    runner_window = runner_track[Reduce(intersect, list(which(runner_track[,"X"] < ref_trail[n,"X"]+window_size/2),
+                                                                        which(runner_track[,"X"] > ref_trail[n,"X"]-window_size/2),
+                                                                        which(runner_track[,"Y"] < ref_trail[n,"Y"]+window_size/2),
+                                                                        which(runner_track[,"Y"] > ref_trail[n,"Y"]-window_size/2))),]
+                    ## calculate means
+                    ref_trail[n,"x_mean"] = mean(runner_window[,"X"])
+                    ref_trail[n,"y_mean"] = mean(runner_window[,"Y"])
+                    ## timer
+                    print(n/nrow(ref_trail))
+               }
+               ##plot results
+               ##par(mfrow=(c(2,2)))
+               plot(1,1,xlim=c(1400,1800), ylim=c(2000,2200))
+               for (n in unique(runner_track[,"ID_track"])) lines(runner_track[which(runner_track[,"ID_track"] == n),][,"X"], runner_track[which(runner_track[,"ID_track"] == n),][,"Y"])
+               lines(ref_trail[,"x_mean"],ref_trail[,"y_mean"],col="red", lwd=5)
+               
+               plot(1,1,xlim=c(-1000,-400), ylim=c(8150,8300))
+               for (n in unique(runner_track[,"ID_track"])) lines(runner_track[which(runner_track[,"ID_track"] == n),][,"X"], runner_track[which(runner_track[,"ID_track"] == n),][,"Y"])
+               lines(ref_trail[,"x_mean"],ref_trail[,"y_mean"],col="red", lwd=5)     
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
+                                                                
+                                                               
+               
+               
+               
+               
+          
+          
           
           
           
@@ -1765,7 +1811,6 @@
           ## transform to concise format
           clean_trail_data = m.concise.dataframe(raw_trail_outline_data)
           clean_trail_data = clean_trail_data[which(clean_trail_data[,"frame_number"] == 1),]
-          
           
           ## plot trail outline
           plot(clean_trail_data[,"X"], clean_trail_data[,"Y"])
