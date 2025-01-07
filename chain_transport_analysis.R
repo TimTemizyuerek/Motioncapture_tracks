@@ -800,77 +800,114 @@
           }
           
 ## 2. DATA ANALYSIS (WAITING TIMES) ----------------------------------------####
-     ## trail identification ####
+     ## load and filter data
           
-          ## load data
+          ## load example data
           track_files = list.files(dir_data, pattern="_track.txt")
-          runner_track = read.table(paste(dir_data, track_files[1],sep=""))
-          plot(1,1,xlim=c(-3500,4500), ylim=c(-2000,8300))
-          for (n in unique(runner_track[,"ID_track"])) lines(runner_track[which(runner_track[,"ID_track"] == n),][,"X"], runner_track[which(runner_track[,"ID_track"] == n),][,"Y"])
+          track_data = read.table(paste(dir_data, track_files[1],sep=""))
+          
+          ## remove tracks that are shorter than 1 min (i.e. 3,600 frames)
+          track_data = track_data[which(track_data[,"ID_track"] %in% which(as.vector(table(track_data[,"ID_track"])) >= 3600)),]
+          
+          for (n in unique(track_data[,"ID_track"])) {plot(track_data[which(track_data[,"ID_track"] == n),][,"X"], track_data[which(track_data[,"ID_track"] == n),][,"Y"])}
+          
+          ## remove tracks that don't move
+          test = track_data[which(track_data[,"ID_track"] == 1),]
+          
+          which(test[,"distance"] > 1.5)
+          
+          walking_track = which(track_data[,"distance"] > 1.5)
           
           
-          ## the window approach
-               ## cut runner window from upper_x, lower_x, upper_y and lower_y
-               upper_x=1800;lower_x=1400
-               upper_y=2250;lower_y=1850
-               runner_window = runner_track[Reduce(intersect, list(which(runner_track[,"X"]<upper_x),which(runner_track[,"X"]>lower_x),which(runner_track[,"Y"]<upper_y),which(runner_track[,"Y"]>lower_y))),]
-               ## compute means
-               mean_x = mean(runner_window[,"X"])
-               mean_y = mean(runner_window[,"Y"])
-               ## plot
-               plot(runner_window[,"X"], runner_window[,"Y"])
-               abline(h=mean_y, col="red")
-               abline(v=mean_x, col="red")
-          
+     ## center trail identification ####
           
           ## the reference trail approach (to guide window)
-               ## reduce resolution (frame number) to 0.5fps
-               runner_track = runner_track[which(runner_track[,"frame_number"] %in% seq(from=0, to=nrow(runner_track), by=20)),]
-               ## find reference trail
-               ref_trail = runner_track[which(runner_track[,"ID_track"]==29),]
-               ## plot(runner_track[which(runner_track[,"ID_track"]==29),"X"], runner_track[which(runner_track[,"ID_track"]==29),"Y"])
-               ## window size in space
-               window_size = 50
-               ## run through all datapoints ~ 2 mins
-               for (n in 1:nrow(ref_trail)){
-                    ## cut trails in window
-                    runner_window = runner_track[Reduce(intersect, list(which(runner_track[,"X"] < ref_trail[n,"X"]+window_size/2),
-                                                                        which(runner_track[,"X"] > ref_trail[n,"X"]-window_size/2),
-                                                                        which(runner_track[,"Y"] < ref_trail[n,"Y"]+window_size/2),
-                                                                        which(runner_track[,"Y"] > ref_trail[n,"Y"]-window_size/2))),]
-                    ## calculate means
-                    ref_trail[n,"x_mean"] = mean(runner_window[,"X"])
-                    ref_trail[n,"y_mean"] = mean(runner_window[,"Y"])
-                    ## timer
-                    print(n/nrow(ref_trail))
-               }
-               ##plot results
-               ##par(mfrow=(c(2,2)))
-               plot(1,1,xlim=c(1400,1800), ylim=c(2000,2200))
-               for (n in unique(runner_track[,"ID_track"])) lines(runner_track[which(runner_track[,"ID_track"] == n),][,"X"], runner_track[which(runner_track[,"ID_track"] == n),][,"Y"])
-               lines(ref_trail[,"x_mean"],ref_trail[,"y_mean"],col="red", lwd=5)
+          ## reduce resolution (frame number) to 0.5fps
+          track_data = track_data[which(track_data[,"frame_number"] %in% seq(from=0, to=nrow(track_data), by=20)),]
                
-               plot(1,1,xlim=c(-1000,-400), ylim=c(8150,8300))
-               for (n in unique(runner_track[,"ID_track"])) lines(runner_track[which(runner_track[,"ID_track"] == n),][,"X"], runner_track[which(runner_track[,"ID_track"] == n),][,"Y"])
-               lines(ref_trail[,"x_mean"],ref_trail[,"y_mean"],col="red", lwd=5)     
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
-                                                                
-                                                               
+          ## find reference trail
+          ref_trail = track_data[which(track_data[,"ID_track"]==29),]
+          ## plot(track_data[which(track_data[,"ID_track"]==29),"X"], track_data[which(track_data[,"ID_track"]==29),"Y"])
                
+          ## window size in space
+          window_size = 50
                
+          ## run through all datapoints ~ 2 mins
+          for (n in 1:nrow(ref_trail)){
+                    
+               ## cut trails in window
+               runner_window = track_data[Reduce(intersect, list(which(track_data[,"X"] < ref_trail[n,"X"]+window_size/2),
+                                                                   which(track_data[,"X"] > ref_trail[n,"X"]-window_size/2),
+                                                                   which(track_data[,"Y"] < ref_trail[n,"Y"]+window_size/2),
+                                                                   which(track_data[,"Y"] > ref_trail[n,"Y"]-window_size/2))),]
+                    
+               ## calculate means
+               ref_trail[n,"x_mean"] = mean(runner_window[,"X"])
+               ref_trail[n,"y_mean"] = mean(runner_window[,"Y"])
+                    
+               ## timer
+               print(n/nrow(ref_trail))
+          }
                
+          ##plot results
+          ##par(mfrow=(c(1,2)))
+          plot(1,1,xlim=c(1400,1800), ylim=c(2000,2200))
+          for (n in unique(track_data[,"ID_track"])) lines(track_data[which(track_data[,"ID_track"] == n),][,"X"], track_data[which(track_data[,"ID_track"] == n),][,"Y"])
+          lines(ref_trail[,"x_mean"],ref_trail[,"y_mean"],col="red", lwd=5)
                
+          plot(1,1,xlim=c(-1000,-400), ylim=c(8150,8300))
+          for (n in unique(track_data[,"ID_track"])) lines(track_data[which(track_data[,"ID_track"] == n),][,"X"], track_data[which(track_data[,"ID_track"] == n),][,"Y"])
+          lines(ref_trail[,"x_mean"],ref_trail[,"y_mean"],col="red", lwd=5)     
+                                                                
+     ## calculate waiting times #### 
+          
+          ## list to store waiting events
+          waiting_data = vector(mode='list', length=length(track_data))
+          
+          ## extract waiting events
+          for (n in unique(track_data[,"ID_track"])) {
+               
+               ## run through tracks
+               runner_track = track_data[which(track_data[,"ID_track"] == n),]
+               
+               ## remove NAs from tracks by computing average of the two adjacent values
+               runner_na = which(is.na(runner_track[,"distance"]) == TRUE)
+               for (m in 1:(length(runner_na)-1)) runner_track[runner_na[m], "distance"] = mean(c(runner_track[runner_na[m]-1,"distance"], runner_track[runner_na[m]+1,"distance"]))
+               
+               ## smooth distances
+               for (m in 1:4) runner_track[,"distance"] = runmed(runner_track[,"distance"],111)
+               
+               # windows(50,15)
+               # plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
+               # plot(1:1000, log(runner_track[1:1000,"distance"]), type="l")
+               # abline(h=log(1.5))
+               
+               ## set cutoff at 1.5mm/ds which equals 15 mm/s which equals 30% of average walking speed (https://doi.org/10.1007/s000400300001)
+               walking_track = which(runner_track[,"distance"] > 1.5)
+               resting_track = which(runner_track[,"distance"] < 1.5)
+               
+               plot(runner_track[,"X"], runner_track[,"Y"], type="l", main=n)
+               points(runner_track[resting_track,"X"], runner_track[resting_track,"Y"],col="blue")
+               points(runner_track[walking_track,"X"], runner_track[walking_track,"Y"], type="l",col="red")
+               
+               ## extract separate resting events (allow movement for 100 seconds during events)
+               sep_events = c(1,which(diff(runner_track[resting_track,"frame_number"]) > 100))
+               
+               ## extract length of each event
+               sep_len = diff(sep_events)
+               
+               ## remove events shorter than 10 seconds
+               waiting_data[[n]] = sep_len[which(sep_len > 100)]
+          }
+          
+          
+          plot(runner_track[,"X"], runner_track[,"Y"])
+          table(track_data[,"ID_track"])
           
           
           
           
-          
-          
-          
+## 3. ARCHIVE --------------------------------------------------------------####      
      ## how often are tracks near to each other? ####
           
           ## extract stitch events
@@ -936,49 +973,6 @@
           
           stopper
           
-     ## calculate waiting times #### 
-          
-          ## list to store waiting events
-          waiting_data = vector(mode='list', length=length(track_data))
-          
-          ## extract waiting events
-          for (n in 1:length(track_data)) {
-               
-               ## run through tracks
-               runner_track = track_data[[n]]
-               
-               ## remove NAs from tracks by computing average of the two adjacent values
-               runner_na = which(is.na(runner_track[,"distance"]) == TRUE)
-               for (m in 1:(length(runner_na)-1)) runner_track[runner_na[m], "distance"] = mean(c(runner_track[runner_na[m]-1,"distance"], runner_track[runner_na[m]+1,"distance"]))
-               
-               ## smooth distances
-               for (m in 1:4) runner_track[,"distance"] = runmed(runner_track[,"distance"],111)
-               
-               windows(50,15)
-               plot(1:nrow(runner_track), log(runner_track[,"distance"]), type="l")
-               plot(1:1000, log(runner_track[1:1000,"distance"]), type="l")
-               abline(h=log(1.5))
-               
-               ## set cutoff at 1.5mm/ds which equals 15 mm/s which equals 30% of average walking speed (https://doi.org/10.1007/s000400300001)
-               walking_track = which(runner_track[,"distance"] > 1.5)
-               resting_track = which(runner_track[,"distance"] < 1.5)
-               
-               plot(runner_track[,"X"], runner_track[,"Y"], type="l")
-               points(runner_track[resting_track,"X"], runner_track[resting_track,"Y"],col="blue")
-               points(runner_track[walking_track,"X"], runner_track[walking_track,"Y"], type="l",col="red")
-               
-               ## extract separate resting events (allow movement for 100 seconds during events)
-               sep_events = c(1,which(diff(runner_track[resting_track,"frame_number"]) > 100))
-               
-               ## extract length of each event
-               sep_len = diff(sep_events)
-               
-               ## remove events shorter than 10 seconds
-               waiting_data[[n]] = sep_len[which(sep_len > 100)]
-          }
-          
-          
-## 3. ARCHIVE --------------------------------------------------------------####
      ## old tests, not adapted to tracks in different files ####
           ## Is any tracklet used multiple times?
           tracklets_used_multiple_times_test = function(u_track_data) {
